@@ -40,8 +40,8 @@ namespace FishingMap.API
             services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString, opt => opt.UseNetTopologySuite()), ServiceLifetime.Scoped);
 
             services.AddScoped<IGeometryFactory>(provider => new GeometryFactory(new PrecisionModel(), 4326));
-            services.AddScoped<ILocationService, LocationService>();
-            services.AddScoped<ILocationOwnerService, LocationOwnerService>();
+            services.AddScoped<ILocationsService, LocationsService>();
+            services.AddScoped<ILocationOwnersService, LocationOwnersService>();
             services.AddScoped<ISpeciesService, SpeciesService>();
         }
 

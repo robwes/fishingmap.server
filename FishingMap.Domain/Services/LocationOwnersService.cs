@@ -5,7 +5,7 @@ using System.Text;
 
 namespace FishingMap.Domain.Services
 {
-    public class LocationOwnerService : ILocationOwnerService
+    public class LocationOwnersService : ILocationOwnersService
     {
     }
 }

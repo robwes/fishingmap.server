@@ -17,13 +17,13 @@ using System.Threading.Tasks;
 
 namespace FishingMap.Domain.Services
 {
-    public class LocationService : ILocationService
+    public class LocationsService : ILocationsService
     {
         private readonly ApplicationDbContext _context;
         private readonly IMapper _mapper;
         private readonly GeoAPI.Geometries.IGeometryFactory _geometryFactory;
 
-        public LocationService(ApplicationDbContext context, IMapper mapper, GeoAPI.Geometries.IGeometryFactory geometryFactory)
+        public LocationsService(ApplicationDbContext context, IMapper mapper, GeoAPI.Geometries.IGeometryFactory geometryFactory)
         {
             _context = context;
             _mapper = mapper;

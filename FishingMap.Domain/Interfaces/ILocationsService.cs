@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace FishingMap.Domain.Interfaces
 {
-    public interface ILocationService
+    public interface ILocationsService
     {
         Task<Location> AddLocation(Location location);
         Task<IEnumerable<Location>> GetLocations(string search = "", List<int> speciesIds = null, double? inRange = null, GeoPoint fromPosition = null);

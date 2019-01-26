@@ -12,9 +12,9 @@ namespace FishingMap.API.Controllers
     [ApiController]
     public class LocationOwnersController : ControllerBase
     {
-        private readonly ILocationOwnerService _service;
+        private readonly ILocationOwnersService _service;
 
-        public LocationOwnersController(ILocationOwnerService service)
+        public LocationOwnersController(ILocationOwnersService service)
         {
             _service = service;
         }

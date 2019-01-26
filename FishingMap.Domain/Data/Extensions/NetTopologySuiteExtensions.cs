@@ -19,7 +19,7 @@ namespace FishingMap.Domain.Data.Extensions
             var polygon = feature.Geometry as IPolygon;
             if (!polygon.Shell.IsCCW)
             {
-                polygon = polygon.Reverse() as IPolygon; //new Polygon(new LinearRing(polygon.Coordinates.Reverse().ToArray()) { SRID = 4326 });
+                polygon = polygon.Reverse() as IPolygon;
             }
 
             return polygon;

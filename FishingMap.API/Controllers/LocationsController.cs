@@ -13,9 +13,9 @@ namespace FishingMap.API.Controllers
     [ApiController]
     public class LocationsController : ControllerBase
     {
-        private readonly ILocationService _locationService;
+        private readonly ILocationsService _locationService;
 
-        public LocationsController(ILocationService service)
+        public LocationsController(ILocationsService service)
         {
             _locationService = service;
         }

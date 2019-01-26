@@ -4,7 +4,7 @@ using System.Text;
 
 namespace FishingMap.Domain.Interfaces
 {
-    public interface ILocationOwnerService
+    public interface ILocationOwnersService
     {
     }
 }
