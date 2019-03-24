@@ -64,7 +64,6 @@ namespace FishingMap.Domain.Data.Extensions
             builder.Append("]]}}");
 
             return builder.ToString();
-
         }
 
         public static IPoint CreatePoint(this IGeometryFactory factory, double x, double y)

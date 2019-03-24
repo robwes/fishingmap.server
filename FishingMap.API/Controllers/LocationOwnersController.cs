@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using FishingMap.Domain.Interfaces;
-using Microsoft.AspNetCore.Http;
+﻿using FishingMap.Domain.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 
 namespace FishingMap.API.Controllers
 {

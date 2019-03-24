@@ -3,16 +3,10 @@ using FishingMap.Domain.Data.Context;
 using FishingMap.Domain.Data.DTO;
 using FishingMap.Domain.Data.Extensions;
 using FishingMap.Domain.Interfaces;
-using GeoAPI.CoordinateSystems;
 using Microsoft.EntityFrameworkCore;
-using NetTopologySuite.Features;
-using NetTopologySuite.Geometries;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace FishingMap.Domain.Services
@@ -84,16 +78,16 @@ namespace FishingMap.Domain.Services
             return null;
         }
 
-        public async Task<IEnumerable<Location>> GetLocations(string search = "", List<int> speciesIds = null, double? inRange = null, GeoPoint fromPosition = null)
+        public async Task<IEnumerable<Location>> GetLocations(string search = "", List<int> speciesIds = null, double? radius = null, double? orgLat = null, double? orgLng = null)
         {
-            List<Data.Entities.Location> locations = await FindLocations(search, speciesIds, inRange, fromPosition);
+            List<Data.Entities.Location> locations = await FindLocations(search, speciesIds, radius, orgLat, orgLng);
 
             return _mapper.Map<IEnumerable<Data.Entities.Location>, IEnumerable<Location>>(locations);
         }
 
-        public async Task<IEnumerable<LocationMarker>> GetMarkers(string search = "", List<int> speciesIds = null, double? inRange = null, GeoPoint fromPosition = null)
+        public async Task<IEnumerable<LocationMarker>> GetMarkers(string search = "", List<int> speciesIds = null, double? radius = null, double? orgLat = null, double? orgLng = null)
         {
-            var locations = await FindLocations(search, speciesIds, inRange, fromPosition);
+            var locations = await FindLocations(search, speciesIds, radius, orgLat, orgLng);
             return _mapper.Map<IEnumerable<Data.Entities.Location>, IEnumerable<LocationMarker>>(locations);
         }
 
@@ -136,12 +130,18 @@ namespace FishingMap.Domain.Services
             return null;
         }
 
-        private async Task<List<Data.Entities.Location>> FindLocations(string search, List<int> speciesIds, double? inRange = null, GeoPoint fromPosition = null)
+        private async Task<List<Data.Entities.Location>> FindLocations(string search = "", List<int> speciesIds = null, double? radius = null, double? orgLat = null, double? orgLng = null)
         {
             var query = _context.Locations.Include(l => l.LocationSpecies).ThenInclude(ls => ls.Species).AsQueryable();
             if (!string.IsNullOrWhiteSpace(search))
             {
                 query = query.Where(l => l.Name.StartsWith(search));
+            }
+
+            if (radius != null && orgLat != null && orgLng != null)
+            {
+                var origin = _geometryFactory.CreatePoint(orgLng.Value, orgLat.Value);
+                query = query.Where(l => l.Position.IsWithinDistance(origin, radius.Value * 1000));
             }
 
             if (speciesIds?.Count > 0)

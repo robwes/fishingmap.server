@@ -6,7 +6,6 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace FishingMap.Domain.Services
@@ -75,7 +74,7 @@ namespace FishingMap.Domain.Services
         public async Task<Species> GetSpeciesById(int id)
         {
             var ent = await _context.Species.FirstOrDefaultAsync(s => s.Id == id);
-            if (ent == null)
+            if (ent != null)
             {
                 return _mapper.Map<Data.Entities.Species, Species>(ent);
             }

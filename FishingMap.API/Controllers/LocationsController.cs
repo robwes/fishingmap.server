@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using FishingMap.Domain.Data.DTO;
+﻿using FishingMap.Domain.Data.DTO;
 using FishingMap.Domain.Interfaces;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace FishingMap.API.Controllers
 {
@@ -22,16 +19,16 @@ namespace FishingMap.API.Controllers
 
         // GET: api/Locations
         [HttpGet]
-        public async Task<IEnumerable<Location>> Get([FromQuery] string search = "", [FromQuery] List<int> sIds = null, [FromQuery] double? inRange = null, [FromQuery] GeoPoint fromPos = null)
+        public async Task<IEnumerable<Location>> Get([FromQuery] string search = "", [FromQuery] List<int> sIds = null, [FromQuery] double? radius = null, [FromQuery] double? orgLat = null, [FromQuery] double? orgLng = null)
         {
-            var locations = await _locationService.GetLocations(search, sIds, inRange, fromPos);
+            var locations = await _locationService.GetLocations(search, sIds, radius, orgLat, orgLng);
             return locations;
         }
 
         [HttpGet("markers")]
-        public async Task<IEnumerable<LocationMarker>> Markers([FromQuery] string search = "")
+        public async Task<IEnumerable<LocationMarker>> Markers([FromQuery] string search = "", [FromQuery] List<int> sIds = null, [FromQuery] double? radius = null, [FromQuery] double? orgLat = null, [FromQuery] double? orgLng = null)
         {
-            var markers = await _locationService.GetMarkers(search);
+            var markers = await _locationService.GetMarkers(search, sIds, radius, orgLat, orgLng);
             return markers;
         }
 
