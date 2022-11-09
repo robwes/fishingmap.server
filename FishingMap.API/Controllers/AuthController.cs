@@ -1,4 +1,4 @@
-﻿using FishingMap.API.Services;
+﻿using FishingMap.API.Interfaces;
 using FishingMap.Domain.Data.DTO;
 using FishingMap.Domain.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -67,15 +67,6 @@ namespace FishingMap.API.Controllers
                 Secure = true
             });
             return Ok();
-        }
-
-        [HttpGet("Admins")]
-        [Authorize(Roles = "Administrator")]
-        public IActionResult AdminsEndpoint()
-        {
-            var currentUser = GetCurrentUser();
-
-            return Ok($"Hi {currentUser.GivenName}, you are an {currentUser.Role}");
         }
 
         [HttpGet("whoami")]

@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using FishingMap.Domain.Data.Context;
 using FishingMap.Domain.Data.DTO;
+using FishingMap.Domain.Extensions;
 using FishingMap.Domain.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -80,20 +81,42 @@ namespace FishingMap.Domain.Services
             {
                 entity.Name = species.Name;
                 entity.Description = species.Description;
-
-                var imagesInUpdateModel = species.Images.Select(img => img.FileName);
-                var imagesInDb = entity.Images.Select(img => img.Name);
-
-                var imagesToDelete = entity.Images.Where(img => !imagesInUpdateModel.Contains(img.Name));
-                foreach (var image in imagesToDelete)
+                
+                if (entity.Images == null)
                 {
-                    DeleteSpeciesImage(entity, image);
+                    entity.Images = new List<Data.Entities.Image>();
                 }
 
-                var imagesToAdd = species.Images.Where(i => !imagesInDb.Contains(i.FileName));
-                foreach (var image in imagesToAdd)
+                if (species.Images?.Count > 0 && entity.Images.Count > 0)
                 {
-                    await AddSpeciesImage(entity, image);
+                    var imagesInUpdateModel = species.Images.Select(img => img.FileName);
+                    var imagesInDb = entity.Images.Select(img => img.Name);
+
+                    var imagesToDelete = entity.Images.Where(img => !imagesInUpdateModel.Contains(img.Name));
+                    foreach (var image in imagesToDelete)
+                    {
+                        DeleteSpeciesImage(entity, image);
+                    }
+
+                    var imagesToAdd = species.Images.Where(i => !imagesInDb.Contains(i.FileName));
+                    foreach (var image in imagesToAdd)
+                    {
+                        await AddSpeciesImage(entity, image);
+                    }
+                }
+                else if (species.Images?.Count > 0 && entity.Images.Count == 0)
+                {
+                    foreach (var image in species.Images)
+                    {
+                        await AddSpeciesImage(entity, image);
+                    }
+                }
+                else if (species.Images.IsNullOrEmpty())
+                {
+                    foreach (var image in entity.Images)
+                    {
+                        DeleteSpeciesImage(entity, image);
+                    }
                 }
 
                 entity.Modified = DateTime.Now;
@@ -130,10 +153,18 @@ namespace FishingMap.Domain.Services
 
         public async Task DeleteSpecies(int id)
         {
-            var ent = await _context.Species.FindAsync(id);
-            if (ent != null)
+            var species = await _context.Species.Include(s => s.Images).FirstOrDefaultAsync(s => s.Id == id);
+            if (species != null)
             {
-                _context.Species.Remove(ent);
+                if (species.Images != null)
+                {
+                    foreach (var image in species.Images)
+                    {
+                        _fileService.DeleteImage(image.Path);
+                    }
+                }
+
+                _context.Species.Remove(species);
                 await _context.SaveChangesAsync();
             }
         }

@@ -1,5 +1,4 @@
 ﻿using FishingMap.Domain.Interfaces;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 
 namespace FishingMap.API

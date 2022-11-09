@@ -1,5 +1,6 @@
 ﻿using FishingMap.Domain.Data.DTO;
 using FishingMap.Domain.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
@@ -25,6 +26,7 @@ namespace FishingMap.API.Controllers
         }
 
         [HttpPost("RegisterAdmin")]
+        [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> RegisterAdmin([FromBody] UserRegister admin)
         {
             var newAdmin = await _userService.AddAdministrator(admin);

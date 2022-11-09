@@ -37,7 +37,11 @@ namespace FishingMap.API.Services
         public void DeleteImage(string path)
         {
             var fullPathToFile = Path.Combine(_environment.ContentRootPath, "StaticFiles/Images", path);
-            System.IO.File.Delete(fullPathToFile);
+            
+            if (System.IO.File.Exists(fullPathToFile)) 
+            {
+                System.IO.File.Delete(fullPathToFile);
+            }
         }
     }
 }

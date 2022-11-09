@@ -1,4 +1,5 @@
-﻿using FishingMap.Domain.Data.DTO;
+﻿using FishingMap.API.Interfaces;
+using FishingMap.Domain.Data.DTO;
 using FishingMap.Domain.Utils;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;

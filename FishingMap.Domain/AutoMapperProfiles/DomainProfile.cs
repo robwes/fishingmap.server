@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using FishingMap.Domain.Data.DTO;
-using FishingMap.Domain.Data.Extensions;
+using FishingMap.Domain.Extensions;
 using FishingMap.Domain.Interfaces;
 using System.Linq;
 

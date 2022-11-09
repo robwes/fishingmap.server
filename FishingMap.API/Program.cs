@@ -19,6 +19,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Threading.Tasks;
+using FishingMap.API.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 

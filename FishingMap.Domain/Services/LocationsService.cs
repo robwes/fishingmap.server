@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using FishingMap.Domain.Data.Context;
 using FishingMap.Domain.Data.DTO;
-using FishingMap.Domain.Data.Extensions;
 using FishingMap.Domain.Interfaces;
 using NetTopologySuite.Geometries;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +10,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using System.IO;
+using FishingMap.Domain.Data.Entities;
+using FishingMap.Domain.Extensions;
 
 namespace FishingMap.Domain.Services
 {
@@ -71,9 +72,17 @@ namespace FishingMap.Domain.Services
 
         public async Task DeleteLocation(int id)
         {
-            var location = await _context.Locations.FirstOrDefaultAsync(l => l.Id == id);
+            var location = await _context.Locations.Include(l => l.Images).FirstOrDefaultAsync(l => l.Id == id);
             if (location != null)
             {
+                if (location.Images != null)
+                {
+                    foreach (var image in location.Images)
+                    {
+                        _fileService.DeleteImage(image.Path);
+                    }
+                }
+
                 _context.Locations.Remove(location);
                 await _context.SaveChangesAsync();
             }
@@ -112,6 +121,7 @@ namespace FishingMap.Domain.Services
                 .Include(l => l.Species)
                 .Include(l => l.Images)
                 .FirstOrDefaultAsync(l => l.Id == id);
+            
             if (entity != null)
             {
                 entity.Name = location.Name;
@@ -134,20 +144,41 @@ namespace FishingMap.Domain.Services
                     var species = await _context.Species.Where(s => sIds.Contains(s.Id)).ToListAsync();
                     entity.Species = species;
                 }
-
-                var imagesInUpdateModel = location.Images.Select(img => img.FileName);
-                var imagesInDb = entity.Images.Select(img => img.Name);
-
-                var imagesToDelete = entity.Images.Where(img => !imagesInUpdateModel.Contains(img.Name));
-                foreach (var image in imagesToDelete)
+                else
                 {
-                    DeleteLocationImage(entity, image);
+                    entity.Species.Clear();
                 }
 
-                var imagesToAdd = location.Images.Where(i => !imagesInDb.Contains(i.FileName));
-                foreach (var image in imagesToAdd)
+                if (location.Images?.Count > 0 && entity.Images?.Count > 0)
                 {
-                    await AddLocationImage(entity, image);
+                    var imagesInUpdateModel = location.Images?.Select(img => img.FileName);
+                    var imagesInDb = entity.Images?.Select(img => img.Name);
+
+                    var imagesToDelete = entity.Images?.Where(img => !imagesInUpdateModel.Contains(img.Name)).ToList();
+                    foreach (var image in imagesToDelete)
+                    {
+                        DeleteLocationImage(entity, image);
+                    }
+
+                    var imagesToAdd = location.Images.Where(i => !imagesInDb.Contains(i.FileName));
+                    foreach (var image in imagesToAdd)
+                    {
+                        await AddLocationImage(entity, image);
+                    }
+                }
+                else if (location.Images?.Count > 0 && entity.Images?.Count == 0)
+                {
+                    foreach (var image in location.Images)
+                    {
+                        await AddLocationImage(entity, image);
+                    }
+                }
+                else if (location.Images.IsNullOrEmpty())
+                {
+                    foreach (var image in entity.Images)
+                    {
+                        DeleteLocationImage(entity, image);
+                    }
                 }
 
                 entity.Modified = DateTime.Now;

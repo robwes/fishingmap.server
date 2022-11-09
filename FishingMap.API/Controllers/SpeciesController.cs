@@ -48,6 +48,7 @@ namespace FishingMap.API.Controllers
 
         // PUT api/<controller>/5
         [HttpPut("{id}")]
+        [Authorize(Roles = "Administrator")]
         public async Task<Species> Put(int id, [FromForm]SpeciesUpdate species)
         {
             var sp = await _speciesService.UpdateSpecies(id, species);
@@ -56,12 +57,14 @@ namespace FishingMap.API.Controllers
 
         // DELETE: api/ApiWithActions/5
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Administrator")]
         public async Task Delete(int id)
         {
             await _speciesService.DeleteSpecies(id);
         }
 
         [HttpPost("UploadImage")]
+        [Authorize(Roles = "Administrator")]
         public async Task UploadImage(List<IFormFile> images)
         {
             var targetFilePath = "C:\\Users\\rwest\\source\\repos\\fishingmap\\fishingmap.server\\FishingMap.Domain\\Images\\";
