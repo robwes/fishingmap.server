@@ -55,9 +55,9 @@ namespace FishingMap.API.Services
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        public bool ValidateUserPassword(User user, string password)
+        public bool ValidateUserPassword(UserCredentials userCredentials, string password)
         {
-            return Cryptography.Validate(password, user.Salt, user.Password);
+            return Cryptography.Validate(password, userCredentials.Salt, userCredentials.Password);
         }
     }
 }

@@ -26,6 +26,7 @@ namespace FishingMap.Domain.AutoMapperProfiles
             CreateMap<Data.Entities.Species, Species>();
             CreateMap<Data.Entities.LocationOwner, LocationOwner>();
             CreateMap<Data.Entities.User, User>();
+            CreateMap<Data.Entities.User, UserCredentials>();
             CreateMap<Data.Entities.Role, Role>();
             CreateMap<Data.Entities.Image, Image>()
                 .AfterMap<GetImagePath>();

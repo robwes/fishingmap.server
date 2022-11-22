@@ -42,7 +42,8 @@ namespace FishingMap.API.Controllers
                 return NotFound();
             }
 
-            if (!_authService.ValidateUserPassword(user, userLogin.Password))
+            var userCredentials = await _userService.GetUserCredentials(user.Id);
+            if (!_authService.ValidateUserPassword(userCredentials, userLogin.Password))
             {
                 return BadRequest(new { message = "Invalid credentials" });
             }
@@ -54,7 +55,8 @@ namespace FishingMap.API.Controllers
                 SameSite = SameSiteMode.None,
                 Secure = true
             });
-            return Ok();
+
+            return Ok(user);
         }
 
         [HttpPost("logout")]
@@ -70,18 +72,23 @@ namespace FishingMap.API.Controllers
         }
 
         [HttpGet("whoami")]
-        public IActionResult WhoAmI()
+        [Authorize]
+        public async Task<IActionResult> WhoAmI()
         {
-            var currentUser = GetCurrentUser();
-            if (currentUser != null)
+            var currentUserIdentity = GetCurrentUserIdentity();
+            if (currentUserIdentity != null)
             {
-                return Ok(currentUser);
+                var currentUser = await _userService.GetUserByUsername(currentUserIdentity.Username);
+                if (currentUser != null)
+                {
+                    return Ok(currentUser);
+                }
             }
 
             return Unauthorized();
         }
 
-        private UserModel? GetCurrentUser()
+        private UserModel? GetCurrentUserIdentity()
         {
             var identity = HttpContext.User.Identity as ClaimsIdentity;
 

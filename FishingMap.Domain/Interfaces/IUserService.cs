@@ -11,11 +11,14 @@ namespace FishingMap.Domain.Interfaces
     {
         Task<User> AddUser(UserRegister user);
         Task<User> AddAdministrator(UserRegister user);
-        Task<User> UpdateUser(int id, User user);
         Task DeleteUser(int id);
-        Task<IEnumerable<User>> GetUsers();
         Task<User> GetUser(int id);
         Task<User> GetUserByEmail(string email);
         Task<User> GetUserByUsername(string username);
+        Task<UserCredentials> GetUserCredentials(int id);
+        Task<IEnumerable<User>> GetUsers();
+        Task<User> UpdateUser(int id, UserUpdate user);
+    
+
     }
 }
