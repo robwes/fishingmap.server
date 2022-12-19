@@ -7,15 +7,13 @@ using System.Threading.Tasks;
 
 namespace FishingMap.Domain.Data.DTO
 {
-    public class UserLogin
+    public class UserPasswordUpdate
     {
-
         [Required]
-        [MaxLength(50)]
-        public string UserName { get; set; }
-
+        [MinLength(7)]
+        public string CurrentPassword { get; set; }
         [Required]
-        [MinLength(7), MaxLength(100)]
-        public string Password { get; set; }
+        [MinLength(7)]
+        public string NewPassword { get; set; }
     }
 }

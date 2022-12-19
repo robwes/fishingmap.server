@@ -30,7 +30,7 @@ namespace FishingMap.Domain.Data.Context
                 .IsUnique();
 
             var passwordSalt = Cryptography.CreateSalt();
-            var passwordHash = Cryptography.CreateHash("admin", passwordSalt);
+            var passwordHash = Cryptography.CreateHash("admin12", passwordSalt);
             var now = DateTime.Now;
 
             var adminRole = new Role { Id = 1, Name = "Administrator" };
@@ -39,6 +39,8 @@ namespace FishingMap.Domain.Data.Context
             var adminUser = new User
             {
                 Id = 1,
+                FirstName = "Lord Admin",
+                LastName = "First of His Name",
                 Email = "admin@fishingmap.se",
                 UserName = "admin",
                 Password = passwordHash,

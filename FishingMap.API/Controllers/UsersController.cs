@@ -1,8 +1,11 @@
-﻿using FishingMap.Domain.Data.DTO;
+﻿using FishingMap.API.Interfaces;
+using FishingMap.Domain.Data.DTO;
+using FishingMap.Domain.Data.Entities;
 using FishingMap.Domain.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Threading.Tasks;
 
 namespace FishingMap.API.Controllers
@@ -12,20 +15,63 @@ namespace FishingMap.API.Controllers
     public class UsersController : ControllerBase
     {
         private readonly IUserService _userService;
+        private readonly IAuthService _authService;
 
-        public UsersController(IUserService userService)
+        public UsersController(IUserService userService, IAuthService authService)
         {
             _userService = userService;
+            _authService = authService;
         }
 
-        [HttpPost("RegisterUser")]
+        [HttpPut("{id}/details")]
+        [Authorize(Roles = "Administrator")]
+        public async Task<IActionResult> updateUserDetails(int id, [FromForm]UserDetails userDetails)
+        {
+            var currentUser = await _authService.GetCurrentUser(HttpContext);
+            if (currentUser == null || currentUser.Id != id)
+            {
+                return Unauthorized();
+            }
+
+            var updatedUser = await _userService.UpdateUserDetails(currentUser.Id, userDetails);
+            
+            return Ok(updatedUser);
+        }
+
+        [HttpPut("{id}/password")]
+        [Authorize(Roles = "Administrator")]
+        public async Task<IActionResult> updateUserPassword(int id, [FromForm]UserPasswordUpdate userPasswordUpdate)
+        {
+            var currentUser = await _authService.GetCurrentUser(HttpContext);
+            if (currentUser == null || currentUser.Id != id) 
+            {
+                return Unauthorized();
+            }
+
+            var userCredentials = await _userService.GetUserCredentials(currentUser.Id);
+            if (!_authService.ValidateUserPassword(userCredentials, userPasswordUpdate.CurrentPassword))
+            {
+                return Unauthorized();
+            }
+
+            var passwordUpdated = await _userService.UpdateUserPassword(currentUser.Id, userPasswordUpdate.NewPassword);
+            if (!passwordUpdated)
+            {
+                return BadRequest();
+            }
+
+            return Ok();
+        }
+
+        [HttpPost("registerUser")]
+        [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> RegisterUser([FromBody]UserRegister user)
         {
             var newUser = await _userService.AddUser(user);
             return Created("success", newUser);
         }
 
-        [HttpPost("RegisterAdmin")]
+        [HttpPost("registerAdmin")]
         [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> RegisterAdmin([FromBody] UserRegister admin)
         {

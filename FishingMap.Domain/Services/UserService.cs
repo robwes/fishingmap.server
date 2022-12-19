@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace FishingMap.Domain.Services
 {
@@ -127,28 +128,37 @@ namespace FishingMap.Domain.Services
             return _mapper.Map<IEnumerable<User>>(users);
         }
 
-        public async Task<User> UpdateUser(int id, UserUpdate user)
+        public async Task<User> UpdateUserDetails(int id, UserDetails user)
         {
-            if (!await _context.Users.AnyAsync(u =>
-                u.UserName == user.UserName || u.Email == user.Email))
+            var userEntity = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
+            if (userEntity != null)
             {
-                var entity = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
-                if (entity != null)
-                {
-                    entity.FirstName = user.FirstName;
-                    entity.LastName = user.LastName;
-                    entity.UserName = user.UserName;
-                    entity.Email = user.Email;
-                    entity.Password = user.Password;
-                    entity.Modified = DateTime.Now;
+                userEntity.FirstName = user.FirstName;
+                userEntity.LastName = user.LastName;
+                userEntity.Email = user.Email;
+                userEntity.Modified = DateTime.Now;
 
-                    await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync();
 
-                    return _mapper.Map<User>(entity);
-                }
+                return _mapper.Map<User>(userEntity);
             }
 
             return null;
+        }
+
+        public async Task<bool> UpdateUserPassword(int id, string password)
+        {
+            var userEntity = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
+            if (userEntity != null)
+            {
+                userEntity.Password = Cryptography.CreateHash(password, userEntity.Salt);
+                userEntity.Modified = DateTime.Now;
+                await _context.SaveChangesAsync();
+
+                return true;
+            }
+
+            return false;
         }
 
         private async Task<Data.Entities.User> AddUserToDb(UserRegister user, Data.Entities.Role[] roles)
