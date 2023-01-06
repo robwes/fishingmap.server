@@ -17,7 +17,7 @@ namespace FishingMap.Domain.Data.Entities
         public string Description { get; set; }
         public string LicenseInfo { get; set; }
         public string Rules { get; set; }
-        public Polygon Geometry { get; set; }
+        public MultiPolygon Geometry { get; set; }
         [Required]
         public Point Position { get; set; }
         public double? AverageDepth { get; set; }

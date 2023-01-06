@@ -48,7 +48,7 @@ namespace FishingMap.Domain.Services
                 entity.Species = species;
             }           
 
-            entity.Geometry = _geometryFactory.GeoJsonFeatureToPolygon(location.Geometry);
+            entity.Geometry = _geometryFactory.GeoJsonFeatureToMultiPolygon(location.Geometry);
             entity.Position = entity.Geometry.Centroid;
             entity.Area = entity.Geometry.Area;
 
@@ -130,7 +130,7 @@ namespace FishingMap.Domain.Services
                 entity.Rules = location.Rules;
                 entity.WebSite = entity.WebSite;
 
-                var polygon = _geometryFactory.GeoJsonFeatureToPolygon(location.Geometry);
+                var polygon = _geometryFactory.GeoJsonFeatureToMultiPolygon(location.Geometry);
                 if (!entity.Geometry.HasSameCoordinates(polygon))
                 {
                     entity.Geometry = polygon;
