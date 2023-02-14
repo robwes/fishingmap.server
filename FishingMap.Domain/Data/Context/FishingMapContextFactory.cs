@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using FishingMap.Domain.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using System;
@@ -9,10 +10,17 @@ namespace FishingMap.Domain.Data.Context
 {
     public class FishingMapContextFactory : IDesignTimeDbContextFactory<ApplicationDbContext>
     {
+        private readonly IFishingMapConfiguration _configuration;
+
+        public FishingMapContextFactory(IFishingMapConfiguration configuration)
+        {
+            _configuration= configuration;
+        }
+
         public ApplicationDbContext CreateDbContext(string[] args)
         {
             var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
-            var connectionString = "Server=localhost\\SQLEXPRESS;Database=FishingMapDb;Integrated Security=True";
+            var connectionString = _configuration.DatabaseConnectionString;
             optionsBuilder.UseSqlServer(connectionString, o => o.UseNetTopologySuite());
             return new ApplicationDbContext(optionsBuilder.Options);
         }
