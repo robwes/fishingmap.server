@@ -67,7 +67,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAutoMapper(typeof(DomainProfile));
 
-var connectionString = builder.Configuration.GetConnectionString("FishingMapDatabase");
+var connectionString = builder.Configuration.GetConnectionString("UusimapDatabase");
 builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString, opt => opt.UseNetTopologySuite()), ServiceLifetime.Scoped);
 
 builder.Services.AddSingleton<IFishingMapConfiguration, FishingMapConfiguration>();

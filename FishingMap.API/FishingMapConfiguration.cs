@@ -10,7 +10,7 @@ namespace FishingMap.API
         {
             _configuration = configuration;
         }
-        public string DatabaseConnectionString => _configuration["ConnectionStrings:FishingMapDatabase"];
+        public string DatabaseConnectionString => _configuration["ConnectionStrings:UusimapDatabase"];
 
         public string ImagesFolderPath => _configuration["AppSeettings:ImagesFolderPath"];
     }
