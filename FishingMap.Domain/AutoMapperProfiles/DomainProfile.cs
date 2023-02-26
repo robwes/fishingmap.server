@@ -15,7 +15,7 @@ namespace FishingMap.Domain.AutoMapperProfiles
         }
         public void Process(Data.Entities.Image source, Image destination, ResolutionContext context)
         {
-            destination.Url = $"{_configuration.ImagesFolderPath}/{source.Path}";
+            destination.Path = $"{_configuration.ImagesFolderPath}/{source.Path}";
         }
     }
 
@@ -28,8 +28,8 @@ namespace FishingMap.Domain.AutoMapperProfiles
             CreateMap<Data.Entities.User, User>();
             CreateMap<Data.Entities.User, UserCredentials>();
             CreateMap<Data.Entities.Role, Role>();
-            CreateMap<Data.Entities.Image, Image>()
-                .AfterMap<GetImagePath>();
+            CreateMap<Data.Entities.Image, Image>();
+                //.AfterMap<GetImagePath>();
 
             CreateMap<Data.Entities.Location, Location>()
                 .ForMember(dest => dest.Geometry,

@@ -7,12 +7,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.FileProviders;
 using FishingMap.Domain.AutoMapperProfiles;
 using Microsoft.AspNetCore.HttpOverrides;
 using FishingMap.API;
-using System.IO;
-using Microsoft.AspNetCore.Http;
 using FishingMap.API.ModelBinders;
 using FishingMap.API.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -67,11 +64,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAutoMapper(typeof(DomainProfile));
 
-var connectionString = builder.Configuration.GetConnectionString("UusimapDatabase");
+var connectionString = builder.Configuration.GetConnectionString("FishingMapDatabase");
 builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString, opt => opt.UseNetTopologySuite()), ServiceLifetime.Scoped);
 
 builder.Services.AddSingleton<IFishingMapConfiguration, FishingMapConfiguration>();
-builder.Services.AddSingleton<IFileService, FishingMap.API.Services.FileService>();
+builder.Services.AddSingleton<IFileService, FishingMap.API.Services.AzureFileService>();
 
 builder.Services.AddScoped<GeometryFactory>(provider => new GeometryFactory(new PrecisionModel(), 4326));
 
@@ -117,17 +114,5 @@ else
     app.UseDeveloperExceptionPage();
     app.UseMigrationsEndPoint();
 }
-
-app.UseStaticFiles(new StaticFileOptions
-{
-    OnPrepareResponse = ctx =>
-    {
-        ctx.Context.Response.Headers.Append("Access-Control-Allow-Origin", "http://localhost:3000");
-        ctx.Context.Response.Headers.Append("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    },
-    FileProvider = new PhysicalFileProvider(
-           Path.Combine(builder.Environment.ContentRootPath, "StaticFiles")),
-    RequestPath = "/StaticFiles"
-});
 
 app.Run();
