@@ -21,11 +21,4 @@
     <ProjectReference Include="..\FishingMap.Domain\FishingMap.Domain.csproj" />
   </ItemGroup>
 
-	<!--
-  <ItemGroup>
-    <Folder Include="StaticFiles\Images\locations\" />
-    <Folder Include="StaticFiles\Images\species\" />
-  </ItemGroup>
-  -->
-
 </Project>
