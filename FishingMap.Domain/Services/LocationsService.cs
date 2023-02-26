@@ -10,7 +10,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using System.IO;
-using FishingMap.Domain.Data.Entities;
 using FishingMap.Domain.Extensions;
 
 namespace FishingMap.Domain.Services
@@ -21,13 +20,20 @@ namespace FishingMap.Domain.Services
         private readonly IMapper _mapper;
         private readonly GeometryFactory _geometryFactory;
         private readonly IFileService _fileService;
+        private readonly IFishingMapConfiguration _config;
 
-        public LocationsService(ApplicationDbContext context, IMapper mapper, GeometryFactory geometryFactory, IFileService fileService)
+        public LocationsService(
+            ApplicationDbContext context,  
+            IFileService fileService,
+            IFishingMapConfiguration config,
+            GeometryFactory geometryFactory,
+            IMapper mapper)
         {
             _context = context;
-            _mapper = mapper;
-            _geometryFactory = geometryFactory;
             _fileService = fileService;
+            _config = config;
+            _geometryFactory = geometryFactory;
+            _mapper = mapper;
         }
 
         public async Task<Data.DTO.Location> AddLocation(LocationUpdate location)
@@ -75,16 +81,17 @@ namespace FishingMap.Domain.Services
             var location = await _context.Locations.Include(l => l.Images).FirstOrDefaultAsync(l => l.Id == id);
             if (location != null)
             {
-                if (location.Images != null)
+                foreach (var image in location.Images)
                 {
-                    foreach (var image in location.Images)
-                    {
-                        _fileService.DeleteImage(image.Path);
-                    }
+                    _context.Images.Remove(image);
                 }
 
                 _context.Locations.Remove(location);
                 await _context.SaveChangesAsync();
+
+                await _fileService.DeleteFolder(
+                    _config.GetPathToLocationsImageFolder(location.Id)
+                );
             }
         }
 
@@ -218,12 +225,13 @@ namespace FishingMap.Domain.Services
         private void DeleteLocationImage(Data.Entities.Location location, Data.Entities.Image image)
         {
             location.Images.Remove(image);
-            _fileService.DeleteImage(image.Path);
+            _context.Images.Remove(image);
+            _fileService.DeleteFile(image.Path);
         }
 
         private async Task AddLocationImage(Data.Entities.Location location, IFormFile image)
         {
-            var filePath = await _fileService.AddImage(
+            var filePath = await _fileService.AddFile(
                 image,
                 Path.Combine("locations", location.Id.ToString())
             );

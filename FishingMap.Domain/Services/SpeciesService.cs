@@ -17,12 +17,14 @@ namespace FishingMap.Domain.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly IFileService _fileService;
+        private readonly IFishingMapConfiguration _config;
         private readonly IMapper _mapper;
 
-        public SpeciesService(ApplicationDbContext context, IFileService fileService, IMapper mapper)
+        public SpeciesService(ApplicationDbContext context, IFileService fileService, IFishingMapConfiguration config,IMapper mapper)
         {
             _context = context;
             _fileService = fileService;
+            _config = config;
             _mapper = mapper;
         }
 
@@ -95,7 +97,7 @@ namespace FishingMap.Domain.Services
                     var imagesToDelete = entity.Images.Where(img => !imagesInUpdateModel.Contains(img.Name));
                     foreach (var image in imagesToDelete)
                     {
-                        DeleteSpeciesImage(entity, image);
+                        await DeleteSpeciesImage(entity, image);
                     }
 
                     var imagesToAdd = species.Images.Where(i => !imagesInDb.Contains(i.FileName));
@@ -115,7 +117,7 @@ namespace FishingMap.Domain.Services
                 {
                     foreach (var image in entity.Images)
                     {
-                        DeleteSpeciesImage(entity, image);
+                        await DeleteSpeciesImage(entity, image);
                     }
                 }
 
@@ -128,17 +130,18 @@ namespace FishingMap.Domain.Services
             return null;
         }
 
-        private void DeleteSpeciesImage(Data.Entities.Species species, Data.Entities.Image image)
+        private async Task DeleteSpeciesImage(Data.Entities.Species species, Data.Entities.Image image)
         {
             species.Images.Remove(image);
-            _fileService.DeleteImage(image.Path);
+            _context.Images.Remove(image);
+            await _fileService.DeleteFile(image.Path);
         }
 
         private async Task AddSpeciesImage(Data.Entities.Species species, IFormFile image)
         {
-            var filePath = await _fileService.AddImage(
+            var filePath = await _fileService.AddFile(
                 image,
-                Path.Combine("species", species.Id.ToString())
+                $"species/{species.Id}"
             );
             var fileName = Path.GetFileName(filePath);
 
@@ -156,16 +159,15 @@ namespace FishingMap.Domain.Services
             var species = await _context.Species.Include(s => s.Images).FirstOrDefaultAsync(s => s.Id == id);
             if (species != null)
             {
-                if (species.Images != null)
+                foreach (var image in species.Images)
                 {
-                    foreach (var image in species.Images)
-                    {
-                        _fileService.DeleteImage(image.Path);
-                    }
+                    _context.Images.Remove(image);
                 }
 
                 _context.Species.Remove(species);
                 await _context.SaveChangesAsync();
+
+                await _fileService.DeleteFolder(_config.GetPathToSpeciesImageFolder(species.Id));
             }
         }
 

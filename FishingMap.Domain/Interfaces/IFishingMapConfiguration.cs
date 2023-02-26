@@ -10,5 +10,11 @@ namespace FishingMap.Domain.Interfaces
     {
         string DatabaseConnectionString { get; }
         string ImagesFolderPath { get; }
+        string FileShareName { get; }
+        string FileShareConnectionString { get; }
+        string LocationsImageFolderPath { get; }
+        string SpeciesImageFolderPath { get; }
+        string GetPathToLocationsImageFolder(int locationId);
+        string GetPathToSpeciesImageFolder(int speciesId);
     }
 }
