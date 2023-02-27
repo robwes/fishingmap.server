@@ -86,7 +86,7 @@ var app = builder.Build();
 app.UseForwardedHeaders();
 
 app.UseCors(builder => builder
-    .WithOrigins(new[] { "http://localhost:3000" })
+    .WithOrigins(new[] { "https://fishingmap.azurewebsites.net", "http://localhost:3000" })
     .AllowAnyMethod()
     .AllowAnyHeader()
     .AllowCredentials()
