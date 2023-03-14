@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http.Features;
 using NetTopologySuite.Geometries;
 
 namespace FishingMap.Domain.Data.Entities

@@ -1,10 +1,12 @@
 ﻿using NetTopologySuite.Features;
 using NetTopologySuite.Geometries;
+using NetTopologySuite.IO;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace FishingMap.Domain.Extensions
@@ -29,6 +31,34 @@ namespace FishingMap.Domain.Extensions
         {
             var serializer = NetTopologySuite.IO.GeoJsonSerializer.Create(factory);
             var feature = serializer.Deserialize<IFeature>(new JsonTextReader(new StringReader(geoJson)));
+
+            var polygons = new List<Polygon>();
+
+            var multiPolygon = feature.Geometry as MultiPolygon;
+            foreach (var geometry in multiPolygon.Geometries)
+            {
+                var polygon = geometry as Polygon;
+                if (!polygon.Shell.IsCCW)
+                {
+                    polygon = polygon.Reverse() as Polygon;
+                }
+                polygons.Add(polygon);
+            }
+
+            return new MultiPolygon(polygons.ToArray(), factory);
+        }
+
+        public static MultiPolygon GeoJsonFeatureCollectionToMultiPolygon(this GeometryFactory factory, string geoJson)
+        {
+            var serializer = NetTopologySuite.IO.GeoJsonSerializer.Create(factory);
+            var features = serializer.Deserialize<FeatureCollection>(new JsonTextReader(new StringReader(geoJson)));
+            
+            var feature = features.FirstOrDefault();
+
+            if (feature == null)
+            {
+                return null;
+            }
 
             var polygons = new List<Polygon>();
 
@@ -74,38 +104,42 @@ namespace FishingMap.Domain.Extensions
 
         public static string ToGeoJsonFeature(this Polygon polygon)
         {
-            var builder = new StringBuilder();
-            builder.Append(@"{""type"":""Feature"",""geometry"":{""type"":""Polygon"",""coordinates"":[[");
-            
-            foreach (var c in polygon.Coordinates)
-            {
-                builder.AppendFormat(CultureInfo.InvariantCulture, "[{0}, {1}],", c.X, c.Y);
-            }
-            builder.Length--;
-            builder.Append("]]}}");
+            Feature feature = new Feature();
+            feature.Geometry = polygon;
 
-            return builder.ToString();
+            var writer = new GeoJsonWriter();
+            var geoJson = writer.Write(feature);
+
+            return geoJson;
         }
 
         public static string ToGeoJsonFeature(this MultiPolygon multiPolygon)
         {
-            var builder = new StringBuilder();
-            builder.Append(@"{""type"":""Feature"",""geometry"":{""type"":""MultiPolygon"",""coordinates"":[");
+            Feature feature = new Feature();           
+            feature.Geometry = multiPolygon;
 
-            foreach (var p in multiPolygon.Geometries)
-            {
-                builder.Append("[[");
-                foreach (var c in p.Coordinates)
-                {
-                    builder.AppendFormat(CultureInfo.InvariantCulture, "[{0}, {1}],", c.X, c.Y);
-                }
-                builder.Length--;
-                builder.Append("]],");
-            }
-            builder.Length--;
-            builder.Append("]}}");
+            var writer = new GeoJsonWriter();
+            var geoJson = writer.Write(feature);
 
-            return builder.ToString();
+            return geoJson;
+        }
+
+        public static IFeature ToFeature(this MultiPolygon multiPolygon)
+        {
+            Feature feature = new Feature() { Geometry = multiPolygon };
+            return feature;
+        }
+
+        public static string ToGeoJsonFeatureCollection(this MultiPolygon multiPolygon)
+        {
+            FeatureCollection features= new FeatureCollection();
+            Feature feature= new Feature() { Geometry = multiPolygon };
+            features.Add(feature);
+
+            var writer = new GeoJsonWriter();
+            var geoJson = writer.Write(features);
+
+            return geoJson;
         }
 
         public static Point CreatePoint(this GeometryFactory factory, double x, double y)
