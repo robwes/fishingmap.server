@@ -4,6 +4,7 @@ using FishingMap.Domain.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 
@@ -12,9 +13,11 @@ using NetTopologySuite.Geometries;
 namespace FishingMap.Domain.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230404190948_AddPermitsTable")]
+    partial class AddPermitsTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -88,6 +91,9 @@ namespace FishingMap.Domain.Migrations
 
                     b.Property<MultiPolygon>("Geometry")
                         .HasColumnType("geography");
+
+                    b.Property<string>("LicenseInfo")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("LocationOwnerId")
                         .HasColumnType("int");
@@ -170,12 +176,6 @@ namespace FishingMap.Domain.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("Created")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("Modified")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -305,13 +305,13 @@ namespace FishingMap.Domain.Migrations
                         new
                         {
                             Id = 1,
-                            Created = new DateTime(2023, 5, 21, 21, 54, 34, 88, DateTimeKind.Local).AddTicks(2569),
+                            Created = new DateTime(2023, 4, 4, 22, 9, 48, 445, DateTimeKind.Local).AddTicks(9435),
                             Email = "admin@fishingmap.se",
                             FirstName = "Lord Admin",
                             LastName = "First of His Name",
-                            Modified = new DateTime(2023, 5, 21, 21, 54, 34, 88, DateTimeKind.Local).AddTicks(2569),
-                            Password = "dBGObuORnhWEb59hFvXSMJ6bfKKGdkuRbkqmHXl9Vgg=",
-                            Salt = "cHKFZ6L15sY6uJSIiEZ65g==",
+                            Modified = new DateTime(2023, 4, 4, 22, 9, 48, 445, DateTimeKind.Local).AddTicks(9435),
+                            Password = "F9se4c9IXDvMsyeDQEAav7ebCA1WVJLmGQ+ANgkp7jo=",
+                            Salt = "y7XRq2KW+nri7DlO2aA3kw==",
                             UserName = "admin"
                         });
                 });

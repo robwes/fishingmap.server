@@ -22,5 +22,8 @@ namespace FishingMap.Domain.Data.DTO
 
         [FromForm]
         public IEnumerable<Species> Species { get; set; }
+
+        [FromForm]
+        public IEnumerable<Permit> Permits { get; set; }
     }
 }

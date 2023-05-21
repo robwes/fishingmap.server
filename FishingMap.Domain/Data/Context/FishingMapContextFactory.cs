@@ -12,6 +12,8 @@ namespace FishingMap.Domain.Data.Context
     {
         private readonly IFishingMapConfiguration _configuration;
 
+        public FishingMapContextFactory() {}
+
         public FishingMapContextFactory(IFishingMapConfiguration configuration)
         {
             _configuration= configuration;

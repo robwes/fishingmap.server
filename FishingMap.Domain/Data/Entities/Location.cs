@@ -16,7 +16,6 @@ namespace FishingMap.Domain.Data.Entities
         [Required]
         public string Name { get; set; }
         public string Description { get; set; }
-        public string LicenseInfo { get; set; }
         public string Rules { get; set; }
         public MultiPolygon Geometry { get; set; }
         [Required]
@@ -33,5 +32,6 @@ namespace FishingMap.Domain.Data.Entities
         public virtual LocationOwner Owner { get; set; }
         public virtual ICollection<Species> Species { get; set; }
         public virtual ICollection<Image> Images { get; set; }
+        public virtual ICollection<Permit> Permits { get; set; }
     }
 }

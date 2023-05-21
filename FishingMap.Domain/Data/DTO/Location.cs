@@ -9,12 +9,12 @@ namespace FishingMap.Domain.Data.DTO
         public int Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
-        public string LicenseInfo { get; set; }
         public string Rules { get; set; }
         public string Geometry { get; set; }
         public GeoPoint Position { get; set; }
         public string WebSite { get; set; }
         public IEnumerable<Species> Species { get; set; }
+        public IEnumerable<Permit> Permits { get; set; }
         public IEnumerable<Image> Images { get; set; }
     }
 }

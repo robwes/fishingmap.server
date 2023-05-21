@@ -1,5 +1,6 @@
 ﻿using FishingMap.Domain.Data.DTO;
 using FishingMap.Domain.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -42,6 +43,7 @@ namespace FishingMap.API.Controllers
 
         // POST api/<controller>
         [HttpPost]
+        [Authorize(Roles = "Administrator")]
         public async Task<Location> Post([FromForm]LocationUpdate location)
         {
             var loc = await _locationService.AddLocation(location);
@@ -50,6 +52,7 @@ namespace FishingMap.API.Controllers
 
         // PUT api/<controller>/5
         [HttpPut("{id}")]
+        [Authorize(Roles = "Administrator")]
         public async Task<Location> Put(int id, [FromForm]LocationUpdate location)
         {
             var loc = await _locationService.UpdateLocation(id, location);
@@ -58,6 +61,7 @@ namespace FishingMap.API.Controllers
 
         // DELETE api/<controller>/5
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Administrator")]
         public async Task Delete(int id)
         {
             await _locationService.DeleteLocation(id);

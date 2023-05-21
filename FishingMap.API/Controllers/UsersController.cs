@@ -25,7 +25,7 @@ namespace FishingMap.API.Controllers
 
         [HttpPut("{id}/details")]
         [Authorize(Roles = "Administrator")]
-        public async Task<IActionResult> updateUserDetails(int id, [FromForm]UserDetails userDetails)
+        public async Task<IActionResult> UpdateUserDetails(int id, [FromForm]UserDetails userDetails)
         {
             var currentUser = await _authService.GetCurrentUser(HttpContext);
             if (currentUser == null || currentUser.Id != id)

@@ -74,7 +74,6 @@ namespace FishingMap.API.Controllers
                 // For the file name of the uploaded file stored
                 // server-side, use Path.GetRandomFileName to generate a safe
                 // random file name.
-                
                 var trustedFileNameForFileStorage = Path.ChangeExtension(Path.GetRandomFileName(), Path.GetExtension(image.FileName));
                 var filePath = Path.Combine(
                     targetFilePath, trustedFileNameForFileStorage);

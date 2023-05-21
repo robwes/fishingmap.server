@@ -78,6 +78,7 @@ builder.Services.AddScoped<ISpeciesService, SpeciesService>();
 
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IPermitsService, PermitsService>();
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 

@@ -29,7 +29,7 @@ namespace FishingMap.Domain.AutoMapperProfiles
             CreateMap<Data.Entities.User, UserCredentials>();
             CreateMap<Data.Entities.Role, Role>();
             CreateMap<Data.Entities.Image, Image>();
-                //.AfterMap<GetImagePath>();
+            CreateMap<Data.Entities.Permit, Permit>();
 
             CreateMap<Data.Entities.Location, Location>()
                 .ForMember(dest => dest.Geometry,
@@ -39,7 +39,7 @@ namespace FishingMap.Domain.AutoMapperProfiles
                     opts => opts.MapFrom(src => new GeoPoint() { Latitude = src.Position.Y, Longitude = src.Position.X })
                 )
                 .ForMember(dest => dest.Species,
-                    opts => opts.MapFrom(src => src.Species.Select(s => new Species() { Id = s.Id, Name = s.Name, Description = s.Description}))
+                    opts => opts.MapFrom(src => src.Species.Select(s => new Species() { Id = s.Id, Name = s.Name, Description = s.Description }))
                 );
 
             CreateMap<Data.Entities.Location, LocationMarker>()

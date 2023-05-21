@@ -42,7 +42,6 @@ namespace FishingMap.Domain.Services
             {
                 Name = location.Name,
                 Description = location.Description,
-                LicenseInfo = location.LicenseInfo,
                 Rules = location.Rules,
                 WebSite = location.WebSite
             };
@@ -53,6 +52,13 @@ namespace FishingMap.Domain.Services
                 var species = await _context.Species.Where(s => sIds.Contains(s.Id)).ToListAsync();
                 entity.Species = species;
             }           
+
+            if (location.Permits != null)
+            {
+                var pIds = location.Permits.Select(f => f.Id).Distinct();
+                var permits = await _context.Permits.Where(p => pIds.Contains(p.Id)).ToListAsync(); 
+                entity.Permits = permits;
+            }
 
             entity.Geometry = _geometryFactory.GeoJsonFeatureToMultiPolygon(location.Geometry);
             entity.Position = entity.Geometry.Centroid;
@@ -99,6 +105,7 @@ namespace FishingMap.Domain.Services
         {
             var location = await _context.Locations
                 .Include(l => l.Species)
+                .Include(l => l.Permits)
                 .Include(l => l.Images)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(l => l.Id == id);
@@ -126,6 +133,7 @@ namespace FishingMap.Domain.Services
         {
             var entity = await _context.Locations
                 .Include(l => l.Species)
+                .Include(l => l.Permits)
                 .Include(l => l.Images)
                 .FirstOrDefaultAsync(l => l.Id == id);
             
@@ -133,7 +141,6 @@ namespace FishingMap.Domain.Services
             {
                 entity.Name = location.Name;
                 entity.Description = location.Description;
-                entity.LicenseInfo = location.LicenseInfo;
                 entity.Rules = location.Rules;
                 entity.WebSite = entity.WebSite;
 
@@ -154,6 +161,17 @@ namespace FishingMap.Domain.Services
                 else
                 {
                     entity.Species.Clear();
+                }
+
+                if (location.Permits != null)
+                {
+                    var pIds = location.Permits.Select(s => s.Id).Distinct();
+                    var permits = await _context.Permits.Where(p => pIds.Contains(p.Id)).ToListAsync();
+                    entity.Permits = permits;
+                }
+                else
+                {
+                    entity.Permits.Clear();
                 }
 
                 if (location.Images?.Count > 0 && entity.Images?.Count > 0)

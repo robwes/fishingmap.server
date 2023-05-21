@@ -4,6 +4,7 @@ using FishingMap.Domain.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 
@@ -12,9 +13,11 @@ using NetTopologySuite.Geometries;
 namespace FishingMap.Domain.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230404202635_AddColumnsCreatedAndModifiedToPermit")]
+    partial class AddColumnsCreatedAndModifiedToPermit
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -88,6 +91,9 @@ namespace FishingMap.Domain.Migrations
 
                     b.Property<MultiPolygon>("Geometry")
                         .HasColumnType("geography");
+
+                    b.Property<string>("LicenseInfo")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("LocationOwnerId")
                         .HasColumnType("int");
@@ -305,13 +311,13 @@ namespace FishingMap.Domain.Migrations
                         new
                         {
                             Id = 1,
-                            Created = new DateTime(2023, 5, 21, 21, 54, 34, 88, DateTimeKind.Local).AddTicks(2569),
+                            Created = new DateTime(2023, 4, 4, 23, 26, 35, 495, DateTimeKind.Local).AddTicks(3088),
                             Email = "admin@fishingmap.se",
                             FirstName = "Lord Admin",
                             LastName = "First of His Name",
-                            Modified = new DateTime(2023, 5, 21, 21, 54, 34, 88, DateTimeKind.Local).AddTicks(2569),
-                            Password = "dBGObuORnhWEb59hFvXSMJ6bfKKGdkuRbkqmHXl9Vgg=",
-                            Salt = "cHKFZ6L15sY6uJSIiEZ65g==",
+                            Modified = new DateTime(2023, 4, 4, 23, 26, 35, 495, DateTimeKind.Local).AddTicks(3088),
+                            Password = "Bz4U3E0PLjYM0Cz3lbsJCn7DoqY5RujcHX6AQnHzhyc=",
+                            Salt = "xL6AH1CSshok+OXZOZBT5g==",
                             UserName = "admin"
                         });
                 });
