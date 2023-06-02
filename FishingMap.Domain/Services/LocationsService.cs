@@ -104,8 +104,8 @@ namespace FishingMap.Domain.Services
         public async Task<Data.DTO.Location> GetLocation(int id)
         {
             var location = await _context.Locations
-                .Include(l => l.Species)
-                .Include(l => l.Permits)
+                .Include(l => l.Species.OrderBy(s => s.Name))
+                .Include(l => l.Permits.OrderBy(p => p.Name))
                 .Include(l => l.Images)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(l => l.Id == id);
@@ -218,7 +218,7 @@ namespace FishingMap.Domain.Services
         private async Task<List<Data.Entities.Location>> FindLocations(string search = "", List<int> speciesIds = null, double? radius = null, double? orgLat = null, double? orgLng = null)
         {
             var query = _context.Locations
-                .Include(l => l.Species)
+                .Include(l => l.Species.OrderBy(s => s.Name))
                 .Include(l => l.Images)
                 .AsQueryable();
             if (!string.IsNullOrWhiteSpace(search))
