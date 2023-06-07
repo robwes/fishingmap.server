@@ -251,7 +251,7 @@ namespace FishingMap.Domain.Services
         {
             var filePath = await _fileService.AddFile(
                 image,
-                Path.Combine("locations", location.Id.ToString())
+                $"locations/{location.Id}"
             );
             var fileName = Path.GetFileName(filePath);
 
