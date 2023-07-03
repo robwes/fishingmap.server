@@ -87,7 +87,7 @@ var app = builder.Build();
 app.UseForwardedHeaders();
 
 app.UseCors(builder => builder
-    .WithOrigins(new[] { "https://fishingmap.azurewebsites.net", "http://localhost:3000" })
+    .WithOrigins(new[] { "https://fishingmap.azurewebsites.net", "https://fishingmap.fi", "http://localhost:3000" })
     .AllowAnyMethod()
     .AllowAnyHeader()
     .AllowCredentials()
@@ -98,10 +98,7 @@ app.UseHttpsRedirection();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseEndpoints(endpoints =>
-{
-    endpoints.MapControllers();
-});
+app.MapControllers();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
