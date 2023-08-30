@@ -20,6 +20,7 @@ namespace FishingMap.Domain.Data.Entities
         public MultiPolygon Geometry { get; set; }
         [Required]
         public Point Position { get; set; }
+        public Point NavigationPosition { get; set; }
         public double? AverageDepth { get; set; }
         public double? MaxDepth { get; set; }
         public double? Area { get; set; }
