@@ -18,6 +18,7 @@ namespace FishingMap.Domain.Data.DTO
         public string Rules { get; set; }
         public string Geometry { get; set; }
         public GeoPoint Position { get; set; }
+        public GeoPoint NavigationPosition { get; set; }
         public string WebSite { get; set; }
 
         [FromForm]

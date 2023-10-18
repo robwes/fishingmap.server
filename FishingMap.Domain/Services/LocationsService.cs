@@ -64,6 +64,18 @@ namespace FishingMap.Domain.Services
             entity.Position = entity.Geometry.Centroid;
             entity.Area = entity.Geometry.Area;
 
+            if (location.NavigationPosition != null)
+            {
+                entity.NavigationPosition = _geometryFactory.CreatePoint(
+                    location.NavigationPosition.Longitude,
+                    location.NavigationPosition.Latitude
+                );
+            }
+            else
+            {
+                entity.NavigationPosition = null;
+            }
+
             entity.Created = DateTime.Now;
             entity.Modified = DateTime.Now;
             entity = _context.Locations.Add(entity).Entity;
@@ -151,6 +163,18 @@ namespace FishingMap.Domain.Services
                     entity.Position = entity.Geometry.Centroid;
                     entity.Area = polygon.Area;
                 }             
+
+                if (location.NavigationPosition != null)
+                {
+                    entity.NavigationPosition = _geometryFactory.CreatePoint(
+                        location.NavigationPosition.Longitude,
+                        location.NavigationPosition.Latitude
+                    );
+                }
+                else
+                {
+                    entity.NavigationPosition = null;
+                }
 
                 if (location.Species != null)
                 {

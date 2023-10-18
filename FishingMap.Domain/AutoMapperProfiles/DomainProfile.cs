@@ -6,19 +6,6 @@ using System.Linq;
 
 namespace FishingMap.Domain.AutoMapperProfiles
 {
-    public class GetImagePath : IMappingAction<Data.Entities.Image, Image>
-    {
-        private readonly IFishingMapConfiguration _configuration;
-        public GetImagePath(IFishingMapConfiguration configuration)
-        {
-            _configuration = configuration;
-        }
-        public void Process(Data.Entities.Image source, Image destination, ResolutionContext context)
-        {
-            destination.Path = $"{_configuration.ImagesFolderPath}/{source.Path}";
-        }
-    }
-
     public class DomainProfile : Profile
     {
         public DomainProfile()
@@ -36,6 +23,9 @@ namespace FishingMap.Domain.AutoMapperProfiles
                     opts => opts.MapFrom(src => src.Geometry.ToGeoJsonFeature())
                 )
                 .ForMember(dest => dest.Position,
+                    opts => opts.MapFrom(src => new GeoPoint() { Latitude = src.Position.Y, Longitude = src.Position.X })
+                )
+                .ForMember(dest => dest.NavigationPosition,
                     opts => opts.MapFrom(src => new GeoPoint() { Latitude = src.Position.Y, Longitude = src.Position.X })
                 )
                 .ForMember(dest => dest.Species,

@@ -62,27 +62,5 @@ namespace FishingMap.API.Controllers
         {
             await _speciesService.DeleteSpecies(id);
         }
-
-        [HttpPost("UploadImage")]
-        [Authorize(Roles = "Administrator")]
-        public async Task UploadImage(List<IFormFile> images)
-        {
-            var targetFilePath = "C:\\Users\\rwest\\source\\repos\\fishingmap\\fishingmap.server\\FishingMap.Domain\\Images\\";
-
-            foreach (var image in images)
-            {
-                // For the file name of the uploaded file stored
-                // server-side, use Path.GetRandomFileName to generate a safe
-                // random file name.
-                var trustedFileNameForFileStorage = Path.ChangeExtension(Path.GetRandomFileName(), Path.GetExtension(image.FileName));
-                var filePath = Path.Combine(
-                    targetFilePath, trustedFileNameForFileStorage);
-
-                using (var fileStream = System.IO.File.Create(filePath))
-                {
-                    await image.CopyToAsync(fileStream);
-                }
-            }
-        }
     }
 }

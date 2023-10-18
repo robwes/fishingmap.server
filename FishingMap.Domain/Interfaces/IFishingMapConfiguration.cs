@@ -9,7 +9,6 @@ namespace FishingMap.Domain.Interfaces
     public interface IFishingMapConfiguration
     {
         string DatabaseConnectionString { get; }
-        string ImagesFolderPath { get; }
         string FileShareName { get; }
         string FileShareConnectionString { get; }
         string LocationsImageFolderPath { get; }

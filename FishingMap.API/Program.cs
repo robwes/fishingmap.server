@@ -86,12 +86,24 @@ var app = builder.Build();
 
 app.UseForwardedHeaders();
 
-app.UseCors(builder => builder
-    .WithOrigins(new[] { "https://fishingmap.azurewebsites.net", "https://fishingmap.fi", "http://localhost:3000" })
-    .AllowAnyMethod()
-    .AllowAnyHeader()
-    .AllowCredentials()
-);
+if (app.Environment.IsProduction())
+{
+    app.UseCors(builder => builder
+        .WithOrigins(new[] { "https://fishingmap.fi" })
+        .AllowAnyMethod()
+        .AllowAnyHeader()
+        .AllowCredentials()
+    );
+} 
+else
+{
+    app.UseCors(builder => builder
+        .WithOrigins(new[] { "http://localhost:3000" })
+        .AllowAnyMethod()
+        .AllowAnyHeader()
+        .AllowCredentials()
+    );
+}
 
 app.UseHttpsRedirection();
 

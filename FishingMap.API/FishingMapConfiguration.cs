@@ -11,9 +11,6 @@ namespace FishingMap.API
             _configuration = configuration;
         }
         public string DatabaseConnectionString => _configuration["ConnectionStrings:FishingMapDatabase"];
-
-        public string ImagesFolderPath => _configuration["AppSeettings:ImagesFolderPath"];
-
         public string FileShareName => _configuration["FileShare:Name"];
         public string FileShareConnectionString => _configuration.GetConnectionString("FishingMapStorage");
         public string LocationsImageFolderPath => _configuration["FileShare:LocationsImageFolderPath"];
