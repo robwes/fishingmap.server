@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace FishingMap.Domain.Data.DTO
+namespace FishingMap.Domain.Data.DTO.PermitObjects
 {
     public class Permit
     {

@@ -1,4 +1,4 @@
-﻿using FishingMap.Domain.Data.DTO;
+﻿using FishingMap.Domain.Data.DTO.SpeciesObjects;
 using FishingMap.Domain.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -40,7 +40,7 @@ namespace FishingMap.API.Controllers
         // POST api/<controller>
         [HttpPost]
         [Authorize(Roles = "Administrator")]
-        public async Task<Species> Post([FromForm]SpeciesUpdate species)
+        public async Task<Species> Post([FromForm]SpeciesAdd species)
         {
             var sp = await _speciesService.AddSpecies(species);
             return sp;

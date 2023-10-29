@@ -1,5 +1,5 @@
 ﻿using FishingMap.API.Interfaces;
-using FishingMap.Domain.Data.DTO;
+using FishingMap.Domain.Data.DTO.UserObjects;
 using FishingMap.Domain.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;

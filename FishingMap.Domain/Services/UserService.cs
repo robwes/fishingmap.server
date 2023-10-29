@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using FishingMap.Domain.Data.Context;
-using FishingMap.Domain.Data.DTO;
 using FishingMap.Domain.Utils;
 using FishingMap.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using FishingMap.Domain.Data.DTO.UserObjects;
 
 namespace FishingMap.Domain.Services
 {
@@ -22,7 +22,7 @@ namespace FishingMap.Domain.Services
             _mapper = mapper;
         }
 
-        public async Task<User> AddUser(UserRegister user)
+        public async Task<User> AddUser(UserAdd user)
         {
             if (!string.IsNullOrWhiteSpace(user.Password) &&
                 !await _context.Users.AnyAsync(u =>
@@ -41,7 +41,7 @@ namespace FishingMap.Domain.Services
             return null;
         }
 
-        public async Task<User> AddAdministrator(UserRegister user)
+        public async Task<User> AddAdministrator(UserAdd user)
         {
             if (!string.IsNullOrWhiteSpace(user.Password) &&
                 !await _context.Users.AnyAsync(u =>
@@ -127,7 +127,7 @@ namespace FishingMap.Domain.Services
             return _mapper.Map<IEnumerable<User>>(users);
         }
 
-        public async Task<User> UpdateUserDetails(int id, UserDetails user)
+        public async Task<User> UpdateUserDetails(int id, UserDetailsUpdate user)
         {
             var userEntity = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
             if (userEntity != null)
@@ -160,7 +160,7 @@ namespace FishingMap.Domain.Services
             return false;
         }
 
-        private async Task<Data.Entities.User> AddUserToDb(UserRegister user, Data.Entities.Role[] roles)
+        private async Task<Data.Entities.User> AddUserToDb(UserAdd user, Data.Entities.Role[] roles)
         {
             var passwordSalt = Cryptography.CreateSalt();
             var passwordHash = Cryptography.CreateHash(user.Password, passwordSalt); ;

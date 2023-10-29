@@ -1,4 +1,4 @@
-﻿using FishingMap.Domain.Data.DTO;
+﻿using FishingMap.Domain.Data.DTO.SpeciesObjects;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -8,7 +8,7 @@ namespace FishingMap.Domain.Interfaces
 {
     public interface ISpeciesService
     {
-        Task<Species> AddSpecies(SpeciesUpdate species);
+        Task<Species> AddSpecies(SpeciesAdd species);
         Task<IEnumerable<Species>> GetSpecies(string search = "");
         Task<Species> GetSpeciesById(int id);
         Task<Species> UpdateSpecies(int id, SpeciesUpdate species);

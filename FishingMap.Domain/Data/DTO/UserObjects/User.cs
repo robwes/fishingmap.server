@@ -1,14 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace FishingMap.Domain.Data.DTO
+namespace FishingMap.Domain.Data.DTO.UserObjects
 {
-    public class UserRegister
+    public class User
     {
+        public int Id { get; set; }
+
         [Required]
         [MaxLength(50)]
         public string FirstName { get; set; }
@@ -25,9 +23,6 @@ namespace FishingMap.Domain.Data.DTO
         [EmailAddress]
         [MaxLength(100)]
         public string Email { get; set; }
-
-        [Required]
-        [MinLength(7), MaxLength(100)]
-        public string Password { get; set; }
+        public IEnumerable<Role> Roles { get; set; }
     }
 }

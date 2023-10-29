@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using FishingMap.Domain.Data.Context;
-using FishingMap.Domain.Data.DTO;
+using FishingMap.Domain.Data.DTO.PermitObjects;
 using FishingMap.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;

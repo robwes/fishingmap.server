@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace FishingMap.Domain.Data.DTO
+namespace FishingMap.Domain.Data.DTO.LocationObjects
 {
     public class LocationOwner
     {
