@@ -5,9 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FishingMap.Domain.Data.DTO
+namespace FishingMap.Domain.Data.DTO.UserObjects
 {
-    public class UserDetails
+    public class UserDetailsUpdate
     {
         public int Id { get; set; }
 

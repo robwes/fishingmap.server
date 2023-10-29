@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace FishingMap.Domain.Data.DTO
+﻿namespace FishingMap.Domain.Data.DTO.GeoObjects
 {
     public class GeoPoint
     {

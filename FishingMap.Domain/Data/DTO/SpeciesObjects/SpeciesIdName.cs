@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FishingMap.Domain.Data.DTO
+namespace FishingMap.Domain.Data.DTO.SpeciesObjects
 {
-    public class Role
+    public class SpeciesIdName
     {
         public int Id { get; set; }
         public string Name { get; set; }

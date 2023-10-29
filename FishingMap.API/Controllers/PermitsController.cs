@@ -1,4 +1,4 @@
-﻿using FishingMap.Domain.Data.DTO;
+﻿using FishingMap.Domain.Data.DTO.PermitObjects;
 using FishingMap.Domain.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

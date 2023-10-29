@@ -1,5 +1,5 @@
 ﻿using FishingMap.API.Interfaces;
-using FishingMap.Domain.Data.DTO;
+using FishingMap.Domain.Data.DTO.UserObjects;
 using FishingMap.Domain.Data.Entities;
 using FishingMap.Domain.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -25,7 +25,7 @@ namespace FishingMap.API.Controllers
 
         [HttpPut("{id}/details")]
         [Authorize(Roles = "Administrator")]
-        public async Task<IActionResult> UpdateUserDetails(int id, [FromForm]UserDetails userDetails)
+        public async Task<IActionResult> UpdateUserDetails(int id, [FromForm]UserDetailsUpdate userDetails)
         {
             var currentUser = await _authService.GetCurrentUser(HttpContext);
             if (currentUser == null || currentUser.Id != id)
@@ -65,7 +65,7 @@ namespace FishingMap.API.Controllers
 
         [HttpPost("registerUser")]
         [Authorize(Roles = "Administrator")]
-        public async Task<IActionResult> RegisterUser([FromBody]UserRegister user)
+        public async Task<IActionResult> RegisterUser([FromBody]UserAdd user)
         {
             var newUser = await _userService.AddUser(user);
             return Created("success", newUser);
@@ -73,7 +73,7 @@ namespace FishingMap.API.Controllers
 
         [HttpPost("registerAdmin")]
         [Authorize(Roles = "Administrator")]
-        public async Task<IActionResult> RegisterAdmin([FromBody] UserRegister admin)
+        public async Task<IActionResult> RegisterAdmin([FromBody] UserAdd admin)
         {
             var newAdmin = await _userService.AddAdministrator(admin);
             return Created("success", newAdmin);

@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using FishingMap.Domain.Data.Context;
-using FishingMap.Domain.Data.DTO;
+using FishingMap.Domain.Data.DTO.SpeciesObjects;
 using FishingMap.Domain.Extensions;
 using FishingMap.Domain.Interfaces;
 using Microsoft.AspNetCore.Http;
@@ -28,7 +28,7 @@ namespace FishingMap.Domain.Services
             _mapper = mapper;
         }
 
-        public async Task<Species> AddSpecies(SpeciesUpdate species)
+        public async Task<Species> AddSpecies(SpeciesAdd species)
         {
             var entity = new Data.Entities.Species
             {
@@ -73,7 +73,7 @@ namespace FishingMap.Domain.Services
                 .AsNoTracking()
                 .ToListAsync();
 
-            return _mapper.Map<IEnumerable<Data.Entities.Species>, IEnumerable<Data.DTO.Species>>(species);
+            return _mapper.Map<IEnumerable<Data.Entities.Species>, IEnumerable<Species>>(species);
         }
 
         public async Task<Species> UpdateSpecies(int id, SpeciesUpdate species)

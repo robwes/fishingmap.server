@@ -1,4 +1,4 @@
-﻿using FishingMap.Domain.Data.DTO;
+﻿using FishingMap.Domain.Data.DTO.LocationObjects;
 using FishingMap.Domain.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,7 +20,7 @@ namespace FishingMap.API.Controllers
 
         // GET: api/Locations
         [HttpGet]
-        public async Task<IEnumerable<Location>> Get([FromQuery] string search = "", [FromQuery] List<int> sIds = null, [FromQuery] double? radius = null, [FromQuery] double? orgLat = null, [FromQuery] double? orgLng = null)
+        public async Task<IEnumerable<LocationSummary>> Get([FromQuery] string search = "", [FromQuery] List<int> sIds = null, [FromQuery] double? radius = null, [FromQuery] double? orgLat = null, [FromQuery] double? orgLng = null)
         {
             var locations = await _locationService.GetLocations(search, sIds, radius, orgLat, orgLng);
             return locations;
@@ -31,6 +31,13 @@ namespace FishingMap.API.Controllers
         {
             var markers = await _locationService.GetMarkers(search, sIds, radius, orgLat, orgLng);
             return markers;
+        }
+
+        [HttpGet("summary")]
+        public async Task<IEnumerable<LocationSummary>> LocationsSummary([FromQuery] string search = "", [FromQuery] List<int> sIds = null, [FromQuery] double? radius = null, [FromQuery] double? orgLat = null, [FromQuery] double? orgLng = null)
+        {
+            var locations = await _locationService.GetLocationsSummary(search, sIds, radius, orgLat, orgLng);
+            return locations;
         }
 
         // GET api/<controller>/5
@@ -44,7 +51,7 @@ namespace FishingMap.API.Controllers
         // POST api/<controller>
         [HttpPost]
         [Authorize(Roles = "Administrator")]
-        public async Task<Location> Post([FromForm]LocationUpdate location)
+        public async Task<Location> Post([FromForm]LocationAdd location)
         {
             var loc = await _locationService.AddLocation(location);
             return loc;

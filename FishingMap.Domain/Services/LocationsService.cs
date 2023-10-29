@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using FishingMap.Domain.Data.Context;
-using FishingMap.Domain.Data.DTO;
 using FishingMap.Domain.Interfaces;
 using NetTopologySuite.Geometries;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +10,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using System.IO;
 using FishingMap.Domain.Extensions;
+using FishingMap.Domain.Data.DTO.LocationObjects;
 
 namespace FishingMap.Domain.Services
 {
@@ -36,7 +36,7 @@ namespace FishingMap.Domain.Services
             _mapper = mapper;
         }
 
-        public async Task<Data.DTO.Location> AddLocation(LocationUpdate location)
+        public async Task<Data.DTO.LocationObjects.Location> AddLocation(LocationAdd location)
         {
             var entity = new Data.Entities.Location
             {
@@ -91,7 +91,7 @@ namespace FishingMap.Domain.Services
                 await _context.SaveChangesAsync();
             }
 
-            return _mapper.Map<Data.Entities.Location, Data.DTO.Location>(entity);
+            return _mapper.Map<Data.Entities.Location, Data.DTO.LocationObjects.Location>(entity);
         }
 
         public async Task DeleteLocation(int id)
@@ -113,7 +113,7 @@ namespace FishingMap.Domain.Services
             }
         }
 
-        public async Task<Data.DTO.Location> GetLocation(int id)
+        public async Task<Data.DTO.LocationObjects.Location> GetLocation(int id)
         {
             var location = await _context.Locations
                 .Include(l => l.Species.OrderBy(s => s.Name))
@@ -123,16 +123,15 @@ namespace FishingMap.Domain.Services
                 .FirstOrDefaultAsync(l => l.Id == id);
             if (location != null)
             {
-                return _mapper.Map<Data.Entities.Location, Data.DTO.Location>(location);
+                return _mapper.Map<Data.Entities.Location, Data.DTO.LocationObjects.Location>(location);
             }
             return null;
         }
 
-        public async Task<IEnumerable<Data.DTO.Location>> GetLocations(string search = "", List<int> speciesIds = null, double? radius = null, double? orgLat = null, double? orgLng = null)
+        public async Task<IEnumerable<LocationSummary>> GetLocations(string search = "", List<int> speciesIds = null, double? radius = null, double? orgLat = null, double? orgLng = null)
         {
-            List<Data.Entities.Location> locations = await FindLocations(search, speciesIds, radius, orgLat, orgLng);
-
-            return _mapper.Map<IEnumerable<Data.Entities.Location>, IEnumerable<Data.DTO.Location>>(locations);
+            var locations = await FindLocations(search, speciesIds, radius, orgLat, orgLng);
+            return _mapper.Map<IEnumerable<Data.Entities.Location>, IEnumerable<LocationSummary>>(locations);
         }
 
         public async Task<IEnumerable<LocationMarker>> GetMarkers(string search = "", List<int> speciesIds = null, double? radius = null, double? orgLat = null, double? orgLng = null)
@@ -141,7 +140,13 @@ namespace FishingMap.Domain.Services
             return _mapper.Map<IEnumerable<Data.Entities.Location>, IEnumerable<LocationMarker>>(locations);
         }
 
-        public async Task<Data.DTO.Location> UpdateLocation(int id, LocationUpdate location)
+        public async Task<IEnumerable<LocationSummary>> GetLocationsSummary(string search = "", List<int> speciesIds = null, double? radius = null, double? orgLat = null, double? orgLng = null)
+        {
+            var locations = await FindLocations(search, speciesIds, radius, orgLat, orgLng);
+            return _mapper.Map<IEnumerable<Data.Entities.Location>, IEnumerable<LocationSummary>>(locations);
+        }
+
+        public async Task<Data.DTO.LocationObjects.Location> UpdateLocation(int id, LocationUpdate location)
         {
             var entity = await _context.Locations
                 .Include(l => l.Species)
@@ -233,7 +238,7 @@ namespace FishingMap.Domain.Services
                 entity.Modified = DateTime.Now;
                 await _context.SaveChangesAsync();
 
-                return _mapper.Map<Data.Entities.Location, Data.DTO.Location>(entity);
+                return _mapper.Map<Data.Entities.Location, Data.DTO.LocationObjects.Location>(entity);
             }
 
             return null;
