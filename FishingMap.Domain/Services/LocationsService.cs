@@ -203,37 +203,7 @@ namespace FishingMap.Domain.Services
                     entity.Permits.Clear();
                 }
 
-                if (location.Images?.Count > 0 && entity.Images?.Count > 0)
-                {
-                    var imagesInUpdateModel = location.Images?.Select(img => img.FileName);
-                    var imagesInDb = entity.Images?.Select(img => img.Name);
-
-                    var imagesToDelete = entity.Images?.Where(img => !imagesInUpdateModel.Contains(img.Name)).ToList();
-                    foreach (var image in imagesToDelete)
-                    {
-                        DeleteLocationImage(entity, image);
-                    }
-
-                    var imagesToAdd = location.Images.Where(i => !imagesInDb.Contains(i.FileName));
-                    foreach (var image in imagesToAdd)
-                    {
-                        await AddLocationImage(entity, image);
-                    }
-                }
-                else if (location.Images?.Count > 0 && entity.Images?.Count == 0)
-                {
-                    foreach (var image in location.Images)
-                    {
-                        await AddLocationImage(entity, image);
-                    }
-                }
-                else if (location.Images.IsNullOrEmpty())
-                {
-                    foreach (var image in entity.Images)
-                    {
-                        DeleteLocationImage(entity, image);
-                    }
-                }
+                await UpdateLocationsImages(entity, location);
 
                 entity.Modified = DateTime.Now;
                 await _context.SaveChangesAsync();
@@ -244,12 +214,42 @@ namespace FishingMap.Domain.Services
             return null;
         }
 
+        private async Task AddLocationImage(Data.Entities.Location location, IFormFile image)
+        {
+            var filePath = await _fileService.AddFile(
+                image,
+                $"locations/{location.Id}"
+            );
+            var fileName = Path.GetFileName(filePath);
+
+            if (location.Images == null)
+            {
+                location.Images = new List<Data.Entities.Image>();
+            }
+
+            location.Images.Add(new Data.Entities.Image
+            {
+                Name = fileName,
+                Path = filePath,
+                Created = DateTime.Now,
+                Modified = DateTime.Now
+            });
+        }
+
+        private async Task DeleteLocationImage(Data.Entities.Location location, Data.Entities.Image image)
+        {
+            location.Images.Remove(image);
+            _context.Images.Remove(image);
+            await _fileService.DeleteFile(image.Path);
+        }
+
         private async Task<List<Data.Entities.Location>> FindLocations(string search = "", List<int> speciesIds = null, double? radius = null, double? orgLat = null, double? orgLng = null)
         {
             var query = _context.Locations
                 .Include(l => l.Species.OrderBy(s => s.Name))
                 .Include(l => l.Images)
                 .AsQueryable();
+
             if (!string.IsNullOrWhiteSpace(search))
             {
                 query = query.Where(l => l.Name.Contains(search));
@@ -269,28 +269,34 @@ namespace FishingMap.Domain.Services
             return locations;
         }
 
-        private void DeleteLocationImage(Data.Entities.Location location, Data.Entities.Image image)
+        private async Task UpdateLocationsImages(Data.Entities.Location locationEntity, LocationUpdate locationUpdate)
         {
-            location.Images.Remove(image);
-            _context.Images.Remove(image);
-            _fileService.DeleteFile(image.Path);
-        }
 
-        private async Task AddLocationImage(Data.Entities.Location location, IFormFile image)
-        {
-            var filePath = await _fileService.AddFile(
-                image,
-                $"locations/{location.Id}"
-            );
-            var fileName = Path.GetFileName(filePath);
-
-            location.Images.Add(new Data.Entities.Image
+            if (!locationEntity.Images.IsNullOrEmpty())
             {
-                Name = fileName,
-                Path = filePath,
-                Created = DateTime.Now,
-                Modified = DateTime.Now
-            });
+                // Get the list of file names of the images in the update model
+                var imagesInUpdateModel = locationUpdate.Images?.Select(img => img.FileName) ?? new List<string>();
+                // Find the images in the location entity that are not in the update model
+                var imagesToDelete = locationEntity.Images.Where(img => !imagesInUpdateModel.Contains(img.Name));
+
+                foreach (var image in imagesToDelete)
+                {
+                    await DeleteLocationImage(locationEntity, image);
+                }
+            }
+
+            if (!locationUpdate.Images.IsNullOrEmpty())
+            {
+                // Get the list of file names of the images in the location entity
+                var imagesInEntityModel = locationEntity.Images?.Select(img => img.Name) ?? new List<string>();
+                // Find the images in the update model that are not in the location entity
+                var imagesToAdd = locationUpdate.Images.Where(i => !imagesInEntityModel.Contains(i.FileName));
+
+                foreach (var image in imagesToAdd)
+                {
+                    await AddLocationImage(locationEntity, image);
+                }
+            }
         }
     }
 }
