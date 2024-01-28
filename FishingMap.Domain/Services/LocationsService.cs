@@ -1,44 +1,48 @@
-﻿using AutoMapper;
-using FishingMap.Domain.Data.Context;
-using FishingMap.Domain.Interfaces;
-using NetTopologySuite.Geometries;
-using Microsoft.EntityFrameworkCore;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using System.IO;
-using FishingMap.Domain.Extensions;
+using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
+using NetTopologySuite.Geometries;
+using AutoMapper;
+using FishingMap.Common.Extensions;
+using FishingMap.Domain.Interfaces;
 using FishingMap.Domain.Data.DTO.LocationObjects;
+using FishingMap.Data.Interfaces;
+using FishingMap.Data.Entities;
+using Location = FishingMap.Data.Entities.Location;
+using System.Linq.Expressions;
+using FishingMap.Data.Repositories;
 
 namespace FishingMap.Domain.Services
 {
     public class LocationsService : ILocationsService
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly GeometryFactory _geometryFactory;
         private readonly IFileService _fileService;
         private readonly IFishingMapConfiguration _config;
 
         public LocationsService(
-            ApplicationDbContext context,  
+            IUnitOfWork unitOfWork,  
             IFileService fileService,
             IFishingMapConfiguration config,
             GeometryFactory geometryFactory,
             IMapper mapper)
         {
-            _context = context;
+            _unitOfWork = unitOfWork;
             _fileService = fileService;
             _config = config;
             _geometryFactory = geometryFactory;
             _mapper = mapper;
         }
 
-        public async Task<Data.DTO.LocationObjects.Location> AddLocation(LocationAdd location)
+        public async Task<LocationDTO> AddLocation(LocationAdd location)
         {
-            var entity = new Data.Entities.Location
+            var entity = new Location
             {
                 Name = location.Name,
                 Description = location.Description,
@@ -49,15 +53,15 @@ namespace FishingMap.Domain.Services
             if (location.Species != null)
             {
                 var sIds = location.Species.Select(f => f.Id).Distinct();
-                var species = await _context.Species.Where(s => sIds.Contains(s.Id)).ToListAsync();
-                entity.Species = species;
+                var species = await _unitOfWork.Species.GetAll(s => sIds.Contains(s.Id));
+                entity.Species = (ICollection<Species>)species;
             }           
 
             if (location.Permits != null)
             {
                 var pIds = location.Permits.Select(f => f.Id).Distinct();
-                var permits = await _context.Permits.Where(p => pIds.Contains(p.Id)).ToListAsync(); 
-                entity.Permits = permits;
+                var permits = await _unitOfWork.Permits.GetAll(p => pIds.Contains(p.Id));               
+                entity.Permits = (ICollection<Permit>)permits;
             }
 
             entity.Geometry = _geometryFactory.GeoJsonFeatureToMultiPolygon(location.Geometry);
@@ -78,34 +82,34 @@ namespace FishingMap.Domain.Services
 
             entity.Created = DateTime.Now;
             entity.Modified = DateTime.Now;
-            entity = _context.Locations.Add(entity).Entity;
-            await _context.SaveChangesAsync();
+            entity = _unitOfWork.Locations.Add(entity);
+            await _unitOfWork.SaveChanges();
 
             if (location.Images?.Count > 0)
             {
-                entity.Images = new List<Data.Entities.Image>();
+                entity.Images = new List<Image>();
                 foreach (var image in location.Images)
                 {
                     await AddLocationImage(entity, image);
                 }
-                await _context.SaveChangesAsync();
+                await _unitOfWork.SaveChanges();
             }
 
-            return _mapper.Map<Data.Entities.Location, Data.DTO.LocationObjects.Location>(entity);
+            return _mapper.Map<Location, Data.DTO.LocationObjects.LocationDTO>(entity);
         }
 
         public async Task DeleteLocation(int id)
         {
-            var location = await _context.Locations.Include(l => l.Images).FirstOrDefaultAsync(l => l.Id == id);
+            var location = await _unitOfWork.Locations.GetById(id, new string[] { "Images" });
             if (location != null)
             {
                 foreach (var image in location.Images)
                 {
-                    _context.Images.Remove(image);
+                    _unitOfWork.Images.Delete(image);
                 }
 
-                _context.Locations.Remove(location);
-                await _context.SaveChangesAsync();
+                _unitOfWork.Locations.Delete(location);
+                await _unitOfWork.SaveChanges();
 
                 await _fileService.DeleteFolder(
                     _config.GetPathToLocationsImageFolder(location.Id)
@@ -113,46 +117,44 @@ namespace FishingMap.Domain.Services
             }
         }
 
-        public async Task<Data.DTO.LocationObjects.Location> GetLocation(int id)
+        public async Task<LocationDTO> GetLocation(int id)
         {
-            var location = await _context.Locations
-                .Include(l => l.Species.OrderBy(s => s.Name))
-                .Include(l => l.Permits.OrderBy(p => p.Name))
-                .Include(l => l.Images)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(l => l.Id == id);
+            var location = await _unitOfWork.Locations.GetById(
+                id,
+                l => l.Species.OrderBy(s => s.Name),
+                l => l.Permits.OrderBy(p => p.Name),
+                l => l.Images.OrderBy(i => i.Created));
+
             if (location != null)
             {
-                return _mapper.Map<Data.Entities.Location, Data.DTO.LocationObjects.Location>(location);
+                return _mapper.Map<Location, LocationDTO>(location);
             }
             return null;
         }
 
         public async Task<IEnumerable<LocationSummary>> GetLocations(string search = "", List<int> speciesIds = null, double? radius = null, double? orgLat = null, double? orgLng = null)
         {
-            var locations = await FindLocations(search, speciesIds, radius, orgLat, orgLng);
-            return _mapper.Map<IEnumerable<Data.Entities.Location>, IEnumerable<LocationSummary>>(locations);
+            var locations = await _unitOfWork.Locations.FindLocations(search, speciesIds, radius, orgLat, orgLng);
+            return _mapper.Map<IEnumerable<Location>, IEnumerable<LocationSummary>>(locations);
         }
 
         public async Task<IEnumerable<LocationMarker>> GetMarkers(string search = "", List<int> speciesIds = null, double? radius = null, double? orgLat = null, double? orgLng = null)
         {
-            var locations = await FindLocations(search, speciesIds, radius, orgLat, orgLng);
-            return _mapper.Map<IEnumerable<Data.Entities.Location>, IEnumerable<LocationMarker>>(locations);
+            var locations = await _unitOfWork.Locations.FindLocations(search, speciesIds, radius, orgLat, orgLng);
+            return _mapper.Map<IEnumerable<Location>, IEnumerable<LocationMarker>>(locations);
         }
 
         public async Task<IEnumerable<LocationSummary>> GetLocationsSummary(string search = "", List<int> speciesIds = null, double? radius = null, double? orgLat = null, double? orgLng = null)
         {
-            var locations = await FindLocations(search, speciesIds, radius, orgLat, orgLng);
-            return _mapper.Map<IEnumerable<Data.Entities.Location>, IEnumerable<LocationSummary>>(locations);
+            var locations = await _unitOfWork.Locations.FindLocations(search, speciesIds, radius, orgLat, orgLng);
+            return _mapper.Map<IEnumerable<Location>, IEnumerable<LocationSummary>>(locations);
         }
 
-        public async Task<Data.DTO.LocationObjects.Location> UpdateLocation(int id, LocationUpdate location)
+        public async Task<LocationDTO> UpdateLocation(int id, LocationUpdate location)
         {
-            var entity = await _context.Locations
-                .Include(l => l.Species)
-                .Include(l => l.Permits)
-                .Include(l => l.Images)
-                .FirstOrDefaultAsync(l => l.Id == id);
+            var entity = await _unitOfWork.Locations.GetById(
+                                id, 
+                                new string[] { "Species", "Permits", "Images" });
             
             if (entity != null)
             {
@@ -184,8 +186,8 @@ namespace FishingMap.Domain.Services
                 if (location.Species != null)
                 {
                     var sIds = location.Species.Select(s => s.Id).Distinct();
-                    var species = await _context.Species.Where(s => sIds.Contains(s.Id)).ToListAsync();
-                    entity.Species = species;
+                    var species = await _unitOfWork.Species.GetAll(s => sIds.Contains(s.Id));
+                    entity.Species = (ICollection<Species>)species;
                 }
                 else
                 {
@@ -195,8 +197,8 @@ namespace FishingMap.Domain.Services
                 if (location.Permits != null)
                 {
                     var pIds = location.Permits.Select(s => s.Id).Distinct();
-                    var permits = await _context.Permits.Where(p => pIds.Contains(p.Id)).ToListAsync();
-                    entity.Permits = permits;
+                    var permits = await _unitOfWork.Permits.GetAll(p => pIds.Contains(p.Id));
+                    entity.Permits = (ICollection<Permit>)permits;
                 }
                 else
                 {
@@ -206,15 +208,16 @@ namespace FishingMap.Domain.Services
                 await UpdateLocationsImages(entity, location);
 
                 entity.Modified = DateTime.Now;
-                await _context.SaveChangesAsync();
+                entity = _unitOfWork.Locations.Update(entity);
+                await _unitOfWork.SaveChanges();
 
-                return _mapper.Map<Data.Entities.Location, Data.DTO.LocationObjects.Location>(entity);
+                return _mapper.Map<Location, LocationDTO>(entity);
             }
 
             return null;
         }
 
-        private async Task AddLocationImage(Data.Entities.Location location, IFormFile image)
+        private async Task AddLocationImage(Location location, IFormFile image)
         {
             var filePath = await _fileService.AddFile(
                 image,
@@ -224,10 +227,10 @@ namespace FishingMap.Domain.Services
 
             if (location.Images == null)
             {
-                location.Images = new List<Data.Entities.Image>();
+                location.Images = new List<Image>();
             }
 
-            location.Images.Add(new Data.Entities.Image
+            location.Images.Add(new Image
             {
                 Name = fileName,
                 Path = filePath,
@@ -236,42 +239,17 @@ namespace FishingMap.Domain.Services
             });
         }
 
-        private async Task DeleteLocationImage(Data.Entities.Location location, Data.Entities.Image image)
+        private async Task DeleteLocationImage(Location location, Image image)
         {
             location.Images.Remove(image);
-            _context.Images.Remove(image);
+            _unitOfWork.Images.Delete(image);
             await _fileService.DeleteFile(image.Path);
         }
 
-        private async Task<List<Data.Entities.Location>> FindLocations(string search = "", List<int> speciesIds = null, double? radius = null, double? orgLat = null, double? orgLng = null)
+        
+
+        private async Task UpdateLocationsImages(Location locationEntity, LocationUpdate locationUpdate)
         {
-            var query = _context.Locations
-                .Include(l => l.Species.OrderBy(s => s.Name))
-                .Include(l => l.Images)
-                .AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                query = query.Where(l => l.Name.Contains(search));
-            }
-
-            if (radius != null && orgLat != null && orgLng != null)
-            {
-                var origin = _geometryFactory.CreatePoint(orgLng.Value, orgLat.Value);
-                query = query.Where(l => l.Position.IsWithinDistance(origin, radius.Value * 1000));
-            }
-
-            if (speciesIds?.Count > 0)
-            {
-                query = query.Where(l => l.Species.Any(s => speciesIds.Contains(s.Id)));
-            }
-            var locations = await query.OrderBy(l => l.Name).AsNoTracking().ToListAsync();
-            return locations;
-        }
-
-        private async Task UpdateLocationsImages(Data.Entities.Location locationEntity, LocationUpdate locationUpdate)
-        {
-
             if (!locationEntity.Images.IsNullOrEmpty())
             {
                 // Get the list of file names of the images in the update model

@@ -88,7 +88,7 @@ namespace FishingMap.API.Controllers
             return Unauthorized();
         }
 
-        private UserModel? GetCurrentUserIdentity()
+        private UserModel GetCurrentUserIdentity()
         {
             var identity = HttpContext.User.Identity as ClaimsIdentity;
 

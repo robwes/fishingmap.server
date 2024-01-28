@@ -1,11 +1,17 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.168
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.34221.43
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FishingMap.Domain", "FishingMap.Domain\FishingMap.Domain.csproj", "{B84F65E2-C45B-43B3-91B5-54D40F67B992}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FishingMap.Domain", "FishingMap.Domain\FishingMap.Domain.csproj", "{B84F65E2-C45B-43B3-91B5-54D40F67B992}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FishingMap.API", "FishingMap.API\FishingMap.API.csproj", "{7A03A8BE-CAE9-4D69-9AF3-353325678D25}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FishingMap.API", "FishingMap.API\FishingMap.API.csproj", "{7A03A8BE-CAE9-4D69-9AF3-353325678D25}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FishingMap.Domain.Tests", "FishingMap.Domain.Tests\FishingMap.Domain.Tests.csproj", "{47F9501A-FB18-48E9-B4A4-351B8D4E9138}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FishingMap.Data", "FishingMap.Data\FishingMap.Data.csproj", "{19980E0D-CD14-41DA-9177-2ECB608B96E6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FishingMap.Common", "FishingMap.Common\FishingMap.Common.csproj", "{672C3A1A-3235-4BBF-8973-4FA705D13E6E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +27,18 @@ Global
 		{7A03A8BE-CAE9-4D69-9AF3-353325678D25}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7A03A8BE-CAE9-4D69-9AF3-353325678D25}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7A03A8BE-CAE9-4D69-9AF3-353325678D25}.Release|Any CPU.Build.0 = Release|Any CPU
+		{47F9501A-FB18-48E9-B4A4-351B8D4E9138}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{47F9501A-FB18-48E9-B4A4-351B8D4E9138}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{47F9501A-FB18-48E9-B4A4-351B8D4E9138}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{47F9501A-FB18-48E9-B4A4-351B8D4E9138}.Release|Any CPU.Build.0 = Release|Any CPU
+		{19980E0D-CD14-41DA-9177-2ECB608B96E6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{19980E0D-CD14-41DA-9177-2ECB608B96E6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{19980E0D-CD14-41DA-9177-2ECB608B96E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{19980E0D-CD14-41DA-9177-2ECB608B96E6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{672C3A1A-3235-4BBF-8973-4FA705D13E6E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{672C3A1A-3235-4BBF-8973-4FA705D13E6E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{672C3A1A-3235-4BBF-8973-4FA705D13E6E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{672C3A1A-3235-4BBF-8973-4FA705D13E6E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

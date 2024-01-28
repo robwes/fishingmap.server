@@ -22,7 +22,7 @@ namespace FishingMap.API.Controllers
 
         // GET: api/<PermitsController>
         [HttpGet]
-        public async Task<IEnumerable<Permit>> Get([FromQuery] string search = "")
+        public async Task<IEnumerable<PermitDTO>> Get([FromQuery] string search = "")
         {
             var permits = await _permitService.GetPermits(search);
             return permits;
@@ -30,7 +30,7 @@ namespace FishingMap.API.Controllers
 
         // GET api/<PermitsController>/5
         [HttpGet("{id}")]
-        public async Task<Permit> Get(int id)
+        public async Task<PermitDTO> Get(int id)
         {
             var permit = await _permitService.GetPermit(id);
             return permit;
@@ -39,7 +39,7 @@ namespace FishingMap.API.Controllers
         // POST api/<PermitsController>
         [HttpPost]
         [Authorize(Roles = "Administrator")]
-        public async Task<Permit> Post([FromForm] Permit permit)
+        public async Task<PermitDTO> Post([FromForm] PermitDTO permit)
         {
             var newPermit = await _permitService.AddPermit(permit);
             return newPermit;
@@ -48,7 +48,7 @@ namespace FishingMap.API.Controllers
         // PUT api/<PermitsController>/5
         [HttpPut("{id}")]
         [Authorize(Roles = "Administrator")]
-        public async Task<Permit> Put(int id, [FromForm] Permit permit)
+        public async Task<PermitDTO> Put(int id, [FromForm] PermitDTO permit)
         {
             var updatedPermit = await _permitService.UpdatePermit(id, permit);
             return updatedPermit;

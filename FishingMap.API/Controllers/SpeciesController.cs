@@ -23,7 +23,7 @@ namespace FishingMap.API.Controllers
         // GET: api/<controller>
         [HttpGet]
         [AllowAnonymous]
-        public async Task<IEnumerable<Species>> Get([FromQuery] string search = "")
+        public async Task<IEnumerable<SpeciesDTO>> Get([FromQuery] string search = "")
         {
             var species = await _speciesService.GetSpecies(search);
             return species;
@@ -31,7 +31,7 @@ namespace FishingMap.API.Controllers
 
         // GET api/<controller>/5
         [HttpGet("{id}")]
-        public async Task<Species> Get(int id)
+        public async Task<SpeciesDTO> Get(int id)
         {
             var species = await _speciesService.GetSpeciesById(id);
             return species;
@@ -40,7 +40,7 @@ namespace FishingMap.API.Controllers
         // POST api/<controller>
         [HttpPost]
         [Authorize(Roles = "Administrator")]
-        public async Task<Species> Post([FromForm]SpeciesAdd species)
+        public async Task<SpeciesDTO> Post([FromForm]SpeciesAdd species)
         {
             var sp = await _speciesService.AddSpecies(species);
             return sp;
@@ -49,7 +49,7 @@ namespace FishingMap.API.Controllers
         // PUT api/<controller>/5
         [HttpPut("{id}")]
         [Authorize(Roles = "Administrator")]
-        public async Task<Species> Put(int id, [FromForm]SpeciesUpdate species)
+        public async Task<SpeciesDTO> Put(int id, [FromForm]SpeciesUpdate species)
         {
             var sp = await _speciesService.UpdateSpecies(id, species);
             return sp;

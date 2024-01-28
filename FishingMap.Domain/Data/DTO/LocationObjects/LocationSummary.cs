@@ -12,6 +12,6 @@ namespace FishingMap.Domain.Data.DTO.LocationObjects
         public string Description { get; set; }
         public GeoPoint Position { get; set; }
         public IEnumerable<SpeciesIdName> Species { get; set; }
-        public IEnumerable<Image> Images { get; set; }
+        public IEnumerable<ImageDTO> Images { get; set; }
     }
 }

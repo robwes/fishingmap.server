@@ -21,9 +21,9 @@ namespace FishingMap.Domain.Data.DTO.LocationObjects
         public string WebSite { get; set; }
 
         [FromForm]
-        public IEnumerable<Species> Species { get; set; }
+        public IEnumerable<SpeciesDTO> Species { get; set; }
 
         [FromForm]
-        public IEnumerable<Permit> Permits { get; set; }
+        public IEnumerable<PermitDTO> Permits { get; set; }
     }
 }

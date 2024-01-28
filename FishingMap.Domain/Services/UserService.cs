@@ -1,60 +1,58 @@
-﻿using AutoMapper;
-using FishingMap.Domain.Data.Context;
-using FishingMap.Domain.Utils;
-using FishingMap.Domain.Interfaces;
-using Microsoft.EntityFrameworkCore;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
+using FishingMap.Common.Utils;
+using FishingMap.Domain.Interfaces;
 using FishingMap.Domain.Data.DTO.UserObjects;
+using FishingMap.Data.Interfaces;
+using FishingMap.Data.Entities;
 
 namespace FishingMap.Domain.Services
 {
     public class UserService : IUserService
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public UserService(ApplicationDbContext context, IMapper mapper)
+        public UserService(IUnitOfWork unitOfWork, IMapper mapper)
         {
-            _context = context;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
-        public async Task<User> AddUser(UserAdd user)
+        public async Task<UserDTO> AddUser(UserAdd user)
         {
             if (!string.IsNullOrWhiteSpace(user.Password) &&
-                !await _context.Users.AnyAsync(u =>
+                !await _unitOfWork.Users.Any(u =>
                     u.UserName == user.UserName || u.Email == user.Email)
                 )
             {
-                var roles = await _context.Roles
-                    .Where(r => r.Name == "User")
-                    .ToArrayAsync();
+                var roles = await _unitOfWork.Roles
+                    .GetAll(r => r.Name == "User");
+                    
+                var newUser = AddUserToDb(user, roles.ToArray());
 
-                var newUser = AddUserToDb(user, roles);
-
-                return _mapper.Map<User>(newUser);
+                return _mapper.Map<UserDTO>(newUser);
             }
 
             return null;
         }
 
-        public async Task<User> AddAdministrator(UserAdd user)
+        public async Task<UserDTO> AddAdministrator(UserAdd user)
         {
             if (!string.IsNullOrWhiteSpace(user.Password) &&
-                !await _context.Users.AnyAsync(u =>
+                !await _unitOfWork.Users.Any(u =>
                     u.UserName == user.UserName || u.Email == user.Email)
                 )
             {
-                var roles = await _context.Roles
-                    .Where(r => r.Name == "Administrator" || r.Name == "User")
-                    .ToArrayAsync();
+                var roles = await _unitOfWork.Roles
+                    .GetAll(r => r.Name == "Administrator" || r.Name == "User");
 
-                var newUser = AddUserToDb(user, roles);
+                var newUser = AddUserToDb(user, roles.ToArray());
 
-                return _mapper.Map<User>(newUser);
+                return _mapper.Map<UserDTO>(newUser);
             }
 
             return null;
@@ -62,49 +60,45 @@ namespace FishingMap.Domain.Services
 
         public async Task DeleteUser(int id)
         {
-            var entity = await _context.Users.FindAsync(id);
-            if (entity != null)
-            {
-                _context.Users.Remove(entity);
-                await _context.SaveChangesAsync();
-            }
+            await _unitOfWork.Users.Delete(id);
+            await _unitOfWork.SaveChanges();
         }
 
-        public async Task<User> GetUser(int id)
+        public async Task<UserDTO> GetUser(int id)
         {
-            var user = await _context.Users
-                .Include(u => u.Roles)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(u => u.Id == id);
+            var user = await _unitOfWork.Users.GetById(
+                id, 
+                new string[] {"Roles"});
+
             if (user != null)
             {
-                return _mapper.Map<User>(user);
+                return _mapper.Map<UserDTO>(user);
             }
             return null;
         }
 
-        public async Task<User> GetUserByEmail(string email)
+        public async Task<UserDTO> GetUserByEmail(string email)
         {
-            var user = await _context.Users
-                .Include(u => u.Roles)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(u => u.Email == email);
+            var user = await _unitOfWork.Users.Find(
+                                u => u.Email == email,
+                                new string[] {"Roles"});
+
             if (user != null)
             {
-                return _mapper.Map<User>(user);
+                return _mapper.Map<UserDTO>(user);
             }
             return null;
         }
 
-        public async Task<User> GetUserByUsername(string username)
+        public async Task<UserDTO> GetUserByUsername(string username)
         {
-            var user = await _context.Users
-                .Include(u => u.Roles)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(u => u.UserName == username);
+            var user = await _unitOfWork.Users.Find(
+                                u => u.UserName == username,
+                                new string[] {"Roles"});
+
             if (user != null)
             {
-                return _mapper.Map<User>(user);
+                return _mapper.Map<UserDTO>(user);
             }
 
             return null;
@@ -112,7 +106,7 @@ namespace FishingMap.Domain.Services
 
         public async Task<UserCredentials> GetUserCredentials(int id)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
+            var user = await _unitOfWork.Users.GetById(id);
             if (user != null)
             {
                 return _mapper.Map<UserCredentials>(user);
@@ -121,15 +115,19 @@ namespace FishingMap.Domain.Services
             return null;
         }
 
-        public async Task<IEnumerable<User>> GetUsers()
+        public async Task<IEnumerable<UserDTO>> GetUsers()
         {
-            var users = await _context.Users.AsNoTracking().ToListAsync();
-            return _mapper.Map<IEnumerable<User>>(users);
+            var users = await _unitOfWork.Users.GetAll(
+                                null,
+                                u => u.OrderBy(u => u.UserName),
+                                new string[] {"Roles"});
+
+            return _mapper.Map<IEnumerable<UserDTO>>(users);
         }
 
-        public async Task<User> UpdateUserDetails(int id, UserDetailsUpdate user)
+        public async Task<UserDTO> UpdateUserDetails(int id, UserDetailsUpdate user)
         {
-            var userEntity = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
+            var userEntity = await _unitOfWork.Users.GetById(id);
             if (userEntity != null)
             {
                 userEntity.FirstName = user.FirstName;
@@ -137,9 +135,10 @@ namespace FishingMap.Domain.Services
                 userEntity.Email = user.Email;
                 userEntity.Modified = DateTime.Now;
 
-                await _context.SaveChangesAsync();
+                userEntity = _unitOfWork.Users.Update(userEntity);
+                await _unitOfWork.SaveChanges();
 
-                return _mapper.Map<User>(userEntity);
+                return _mapper.Map<UserDTO>(userEntity);
             }
 
             return null;
@@ -147,12 +146,12 @@ namespace FishingMap.Domain.Services
 
         public async Task<bool> UpdateUserPassword(int id, string password)
         {
-            var userEntity = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
+            var userEntity = await _unitOfWork.Users.GetById(id);
             if (userEntity != null)
             {
                 userEntity.Password = Cryptography.CreateHash(password, userEntity.Salt);
                 userEntity.Modified = DateTime.Now;
-                await _context.SaveChangesAsync();
+                await _unitOfWork.SaveChanges();
 
                 return true;
             }
@@ -160,12 +159,12 @@ namespace FishingMap.Domain.Services
             return false;
         }
 
-        private async Task<Data.Entities.User> AddUserToDb(UserAdd user, Data.Entities.Role[] roles)
+        private async Task<User> AddUserToDb(UserAdd user, FishingMap.Data.Entities.Role[] roles)
         {
             var passwordSalt = Cryptography.CreateSalt();
             var passwordHash = Cryptography.CreateHash(user.Password, passwordSalt); ;
 
-            var entity = new Data.Entities.User()
+            var entity = new User()
             {
                 FirstName = user.FirstName,
                 LastName = user.LastName,
@@ -180,8 +179,8 @@ namespace FishingMap.Domain.Services
             entity.Created = now;
             entity.Modified = now;
 
-            entity = _context.Users.Add(entity).Entity;
-            await _context.SaveChangesAsync();
+            entity = _unitOfWork.Users.Add(entity);
+            await _unitOfWork.SaveChanges();
 
             return entity;
         }
