@@ -14,20 +14,19 @@ namespace FishingMap.Data.Interfaces
 
         Task<TEntity?> Find(
             Expression<Func<TEntity, bool>> filter,
-            string[]? includeProperties = null);
+            Expression<Func<TEntity, object>>[]? includeProperties = null,
+            bool noTracking = false);
 
         Task<IEnumerable<TEntity>> GetAll(
             Expression<Func<TEntity, bool>>? filter = null,
+            Expression<Func<TEntity, object>>[]? includeProperties = null,
             Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null,
-            string[]? includeProperties = null);
-        
-        Task<TEntity?> GetById(
-            int id,
-            string[]? includeProperties = null);
+            bool noTracking = false);
 
         Task<TEntity?> GetById(
             int id,
-            params Expression<Func<TEntity, object>>[] includeProperties);
+            Expression<Func<TEntity, object>>[]? include = null,
+            bool noTracking = false);
 
         TEntity Update(TEntity entity);
         Task Delete(int id);

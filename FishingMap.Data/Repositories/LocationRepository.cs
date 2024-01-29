@@ -21,6 +21,7 @@ namespace FishingMap.Data.Repositories
             var query = _context.Locations
                 .Include(l => l.Species.OrderBy(s => s.Name))
                 .Include(l => l.Images)
+                .OrderBy(l => l.Name)
                 .AsQueryable();
 
             if (!string.IsNullOrEmpty(search))
@@ -40,6 +41,22 @@ namespace FishingMap.Data.Repositories
             }
 
             return await query.AsNoTracking().ToListAsync();
+        }
+
+        public async Task<Location?> GetLocationWithDetails(int id, bool noTracking = false)
+        {
+            var query = _context.Locations
+                .Include(l => l.Species.OrderBy(s => s.Name))
+                .Include(l => l.Permits.OrderBy(p => p.Name))
+                .Include(l => l.Images)
+                .AsQueryable();
+
+            if (noTracking)
+            {
+                query = query.AsNoTracking();
+            }
+
+            return await query.FirstOrDefaultAsync(l => l.Id == id);
         }
     }
 }

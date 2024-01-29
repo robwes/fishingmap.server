@@ -1,12 +1,7 @@
-﻿using FishingMap.Data.Context;
-using FishingMap.Data.Interfaces;
+﻿using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
+using FishingMap.Data.Context;
+using FishingMap.Data.Interfaces;
 
 namespace FishingMap.Data.Repositories
 {
@@ -35,15 +30,22 @@ namespace FishingMap.Data.Repositories
         {
             // Add the entity to the context
             _context.Set<TEntity>().Add(entity);
-            return entity; // This returned entity is not tracked
+            return entity;
         }
 
         // find an entity in the database
         public virtual async Task<TEntity?> Find(
-                       Expression<Func<TEntity, bool>> filter,
-                       string[]? includeProperties = null)
+                        Expression<Func<TEntity, bool>> filter,
+                        Expression<Func<TEntity, object>>[]? includeProperties = null,
+                        bool noTracking = false)
         {
-            var query = _context.Set<TEntity>().AsNoTracking();
+            var query = _context.Set<TEntity>().AsQueryable();
+
+            if (noTracking)
+            {
+                query = query.AsNoTracking();
+            }
+
             if (includeProperties != null)
             {
                 foreach (var includeProperty in includeProperties)
@@ -52,19 +54,21 @@ namespace FishingMap.Data.Repositories
                 }
             }
 
-            return await query
-                .AsNoTracking()
-                .FirstOrDefaultAsync(filter);
+            return await query.FirstOrDefaultAsync(filter);
         }
 
-        // get all entities from the database
         public virtual async Task<IEnumerable<TEntity>> GetAll(
             Expression<Func<TEntity, bool>>? filter = null,
+            Expression<Func<TEntity, object>>[]? includeProperties = null,
             Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null,
-            string[]? includeProperties = null
-            )
+            bool noTracking = false)
         {
-            IQueryable<TEntity> query = _context.Set<TEntity>().AsNoTracking();
+            var query = _context.Set<TEntity>().AsQueryable();
+
+            if (noTracking)
+            {
+                query = query.AsNoTracking();
+            }
 
             if (filter != null)
             {
@@ -77,40 +81,29 @@ namespace FishingMap.Data.Repositories
                 {
                     query = query.Include(includeProperty);
                 }
-            }
+            }   
 
             if (orderBy != null)
             {
-                return await orderBy(query).AsNoTracking().ToListAsync();
+                return await orderBy(query).ToListAsync();
             }
             else
             {
-                return await query.AsNoTracking().ToListAsync();
+                return await query.ToListAsync();
             }
         }
 
-        // get an entity by id from the database
         public virtual async Task<TEntity?> GetById(
             int id,
-            string[]? includeProperties = null)
+            Expression<Func<TEntity, object>>[]? includeProperties = null,
+            bool noTracking = false)
         {
-            var query = _context.Set<TEntity>().AsNoTracking();
+            var query = _context.Set<TEntity>().AsQueryable();
 
-            if (includeProperties != null)
+            if (noTracking)
             {
-                foreach (var includeProperty in includeProperties)
-                {
-                    query = query.Include(includeProperty);
-                }
+                query = query.AsNoTracking();
             }
-
-            return await query.FirstOrDefaultAsync(e => e.Id == id);
-        }
-        public virtual async Task<TEntity?> GetById(
-            int id,
-            params Expression<Func<TEntity, object>>[] includeProperties)
-        {
-            var query = _context.Set<TEntity>().AsNoTracking();
 
             if (includeProperties != null)
             {
@@ -126,11 +119,10 @@ namespace FishingMap.Data.Repositories
         // update an entity in the database
         public virtual TEntity Update(TEntity entity)
         {
-            var entry = _context.Entry(entity);
-            entry.CurrentValues.SetValues(entity);
-            _context.Entry(entry.Entity).State = EntityState.Modified;
+            _context.Set<TEntity>().Attach(entity);
+            _context.Entry(entity).State = EntityState.Modified;
 
-            return entry.Entity;
+            return entity;
         }
 
         // delete an entity from the database

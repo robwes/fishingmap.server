@@ -63,23 +63,23 @@ namespace FishingMap.Domain.Services
 
         public async Task<IEnumerable<SpeciesDTO>> GetSpecies(string search = "")
         {
-            Expression<Func<FishingMap.Data.Entities.Species, bool>> query = null;
+            Expression<Func<Species, bool>> query = null;
             if (!string.IsNullOrEmpty(search))
             {
                 query = s => s.Name.Contains(search);
             }
 
             var species = await _unitOfWork.Species.GetAll(
-                query, 
-                s => s.OrderBy(s => s.Name),
-                new string[] { "Images" });
+                query,
+                [s => s.Images],
+                s => s.OrderBy(s => s.Name));
 
             return _mapper.Map<IEnumerable<Species>, IEnumerable<SpeciesDTO>>(species);
         }
 
         public async Task<SpeciesDTO> UpdateSpecies(int id, SpeciesUpdate species)
         {
-            var entity = await _unitOfWork.Species.GetById(id, new string[] { "Images" });
+            var entity = await _unitOfWork.Species.GetById(id, [s => s.Images]);
 
             if (entity != null)
             {
@@ -90,7 +90,7 @@ namespace FishingMap.Domain.Services
 
                 entity.Modified = DateTime.Now;
 
-                entity = _unitOfWork.Species.Update(entity);
+                //entity = _unitOfWork.Species.Update(entity);
                 await _unitOfWork.SaveChanges();
 
                 return _mapper.Map<Species, SpeciesDTO>(entity);
@@ -101,7 +101,7 @@ namespace FishingMap.Domain.Services
 
         public async Task DeleteSpecies(int id)
         {
-            var species = await _unitOfWork.Species.GetById(id, new string[] { "Images" });
+            var species = await _unitOfWork.Species.GetById(id, [s => s.Images]);
             if (species != null)
             {
                 foreach (var image in species.Images)
@@ -118,7 +118,7 @@ namespace FishingMap.Domain.Services
 
         public async Task<SpeciesDTO> GetSpeciesById(int id)
         {
-            var species = await _unitOfWork.Species.GetById(id, new string[] { "Images" });
+            var species = await _unitOfWork.Species.GetById(id, [s => s.Images], true);
             if (species != null)
             {
                 return _mapper.Map<Species, SpeciesDTO>(species);

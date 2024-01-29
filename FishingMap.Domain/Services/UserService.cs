@@ -48,7 +48,7 @@ namespace FishingMap.Domain.Services
                 )
             {
                 var roles = await _unitOfWork.Roles
-                    .GetAll(r => r.Name == "Administrator" || r.Name == "User");
+                    .GetAll(r => r.Name == "Administrator" || r.Name == "User", noTracking: true);
 
                 var newUser = AddUserToDb(user, roles.ToArray());
 
@@ -67,8 +67,9 @@ namespace FishingMap.Domain.Services
         public async Task<UserDTO> GetUser(int id)
         {
             var user = await _unitOfWork.Users.GetById(
-                id, 
-                new string[] {"Roles"});
+                id,
+                [u => u.Roles.OrderBy(r => r.Name)],
+                true);
 
             if (user != null)
             {
@@ -81,7 +82,8 @@ namespace FishingMap.Domain.Services
         {
             var user = await _unitOfWork.Users.Find(
                                 u => u.Email == email,
-                                new string[] {"Roles"});
+                                [u => u.Roles.OrderBy(r => r.Name)],
+                                true);
 
             if (user != null)
             {
@@ -94,7 +96,8 @@ namespace FishingMap.Domain.Services
         {
             var user = await _unitOfWork.Users.Find(
                                 u => u.UserName == username,
-                                new string[] {"Roles"});
+                                [s => s.Roles.OrderBy(r => r.Name)], 
+                                true);
 
             if (user != null)
             {
@@ -106,7 +109,7 @@ namespace FishingMap.Domain.Services
 
         public async Task<UserCredentials> GetUserCredentials(int id)
         {
-            var user = await _unitOfWork.Users.GetById(id);
+            var user = await _unitOfWork.Users.GetById(id, noTracking: true);
             if (user != null)
             {
                 return _mapper.Map<UserCredentials>(user);
@@ -119,8 +122,8 @@ namespace FishingMap.Domain.Services
         {
             var users = await _unitOfWork.Users.GetAll(
                                 null,
-                                u => u.OrderBy(u => u.UserName),
-                                new string[] {"Roles"});
+                                [u => u.Roles.OrderBy(r => r.Name)],
+                                u => u.OrderBy(u => u.UserName));
 
             return _mapper.Map<IEnumerable<UserDTO>>(users);
         }
@@ -135,7 +138,7 @@ namespace FishingMap.Domain.Services
                 userEntity.Email = user.Email;
                 userEntity.Modified = DateTime.Now;
 
-                userEntity = _unitOfWork.Users.Update(userEntity);
+                // userEntity = _unitOfWork.Users.Update(userEntity);
                 await _unitOfWork.SaveChanges();
 
                 return _mapper.Map<UserDTO>(userEntity);
@@ -159,7 +162,7 @@ namespace FishingMap.Domain.Services
             return false;
         }
 
-        private async Task<User> AddUserToDb(UserAdd user, FishingMap.Data.Entities.Role[] roles)
+        private async Task<User> AddUserToDb(UserAdd user, Role[] roles)
         {
             var passwordSalt = Cryptography.CreateSalt();
             var passwordHash = Cryptography.CreateHash(user.Password, passwordSalt); ;

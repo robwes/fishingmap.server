@@ -13,8 +13,6 @@ using FishingMap.Domain.Data.DTO.LocationObjects;
 using FishingMap.Data.Interfaces;
 using FishingMap.Data.Entities;
 using Location = FishingMap.Data.Entities.Location;
-using System.Linq.Expressions;
-using FishingMap.Data.Repositories;
 
 namespace FishingMap.Domain.Services
 {
@@ -100,7 +98,7 @@ namespace FishingMap.Domain.Services
 
         public async Task DeleteLocation(int id)
         {
-            var location = await _unitOfWork.Locations.GetById(id, new string[] { "Images" });
+            var location = await _unitOfWork.Locations.GetById(id, [l => l.Images]);
             if (location != null)
             {
                 foreach (var image in location.Images)
@@ -119,11 +117,7 @@ namespace FishingMap.Domain.Services
 
         public async Task<LocationDTO> GetLocation(int id)
         {
-            var location = await _unitOfWork.Locations.GetById(
-                id,
-                l => l.Species.OrderBy(s => s.Name),
-                l => l.Permits.OrderBy(p => p.Name),
-                l => l.Images.OrderBy(i => i.Created));
+            var location = await _unitOfWork.Locations.GetLocationWithDetails(id, true);
 
             if (location != null)
             {
@@ -152,9 +146,7 @@ namespace FishingMap.Domain.Services
 
         public async Task<LocationDTO> UpdateLocation(int id, LocationUpdate location)
         {
-            var entity = await _unitOfWork.Locations.GetById(
-                                id, 
-                                new string[] { "Species", "Permits", "Images" });
+            var entity = await _unitOfWork.Locations.GetLocationWithDetails(id);
             
             if (entity != null)
             {
@@ -208,7 +200,7 @@ namespace FishingMap.Domain.Services
                 await UpdateLocationsImages(entity, location);
 
                 entity.Modified = DateTime.Now;
-                entity = _unitOfWork.Locations.Update(entity);
+                //entity = _unitOfWork.Locations.Update(entity);
                 await _unitOfWork.SaveChanges();
 
                 return _mapper.Map<Location, LocationDTO>(entity);

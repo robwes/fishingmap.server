@@ -10,5 +10,7 @@ namespace FishingMap.Data.Interfaces
             double? radius = null, 
             double? orgLat = null, 
             double? orgLng = null);
+
+        Task<Location?> GetLocationWithDetails(int id, bool noTracking = false);
     }
 }
