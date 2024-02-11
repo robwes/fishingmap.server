@@ -1,4 +1,4 @@
-﻿using FishingMap.Domain.Data.Context;
+﻿using FishingMap.Data.Context;
 using FishingMap.Domain.Interfaces;
 using FishingMap.Domain.Services;
 using NetTopologySuite.Geometries;
@@ -17,6 +17,8 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Threading.Tasks;
 using FishingMap.API.Interfaces;
+using FishingMap.Data.Interfaces;
+using FishingMap.Data.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -67,10 +69,26 @@ builder.Services.AddAutoMapper(typeof(DomainProfile));
 var connectionString = builder.Configuration.GetConnectionString("FishingMapDatabase");
 builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString, opt => opt.UseNetTopologySuite()), ServiceLifetime.Scoped);
 
+// Register the configuration
 builder.Services.AddSingleton<IFishingMapConfiguration, FishingMapConfiguration>();
-builder.Services.AddSingleton<IFileService, FishingMap.API.Services.AzureFileService>();
 
+// Register the repositories
+builder.Services.AddScoped<IImageRepository, ImageRepository>();
+builder.Services.AddScoped<ILocationOwnerRepository, LocationOwnerRepository>();
+builder.Services.AddScoped<ILocationRepository, LocationRepository>();
+builder.Services.AddScoped<IPermitRepository, PermitRepository>();
+builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+builder.Services.AddScoped<ISpeciesRepository, SpeciesRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+
+// Register the UnitOfWork
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+// Register the GeometryFactory
 builder.Services.AddScoped<GeometryFactory>(provider => new GeometryFactory(new PrecisionModel(), 4326));
+
+// Register the services
+builder.Services.AddSingleton<IFileService, FishingMap.API.Services.AzureFileService>();
 
 builder.Services.AddScoped<ILocationsService, LocationsService>();
 builder.Services.AddScoped<ILocationOwnersService, LocationOwnersService>();

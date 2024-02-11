@@ -1,8 +1,7 @@
-﻿using FishingMap.API.Controllers;
-using FishingMap.API.Interfaces;
-using FishingMap.Domain.Data.DTO.UserObjects;
+﻿using FishingMap.API.Interfaces;
+using FishingMap.Common.Utils;
+using FishingMap.Domain.DTO.Users;
 using FishingMap.Domain.Interfaces;
-using FishingMap.Domain.Utils;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -27,7 +26,7 @@ namespace FishingMap.API.Services
             _userService = userService;
         }
 
-        public string GenerateToken(User user)
+        public string GenerateToken(UserDTO user)
         {
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256); ;
@@ -62,7 +61,7 @@ namespace FishingMap.API.Services
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        public async Task<User> GetCurrentUser(HttpContext httpContext)
+        public async Task<UserDTO> GetCurrentUser(HttpContext httpContext)
         {
             var identity = httpContext.User.Identity as ClaimsIdentity;
             if (identity?.Claims?.Count() > 0)

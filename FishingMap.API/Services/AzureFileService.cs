@@ -1,10 +1,8 @@
 ﻿using Azure;
 using Azure.Storage.Files.Shares;
 using Azure.Storage.Files.Shares.Models;
-using FishingMap.Domain;
 using FishingMap.Domain.Interfaces;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using System;
 using System.IO;
 using System.Linq;

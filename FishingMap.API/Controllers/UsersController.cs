@@ -1,12 +1,12 @@
 ﻿using FishingMap.API.Interfaces;
-using FishingMap.Domain.Data.DTO.UserObjects;
-using FishingMap.Domain.Data.Entities;
+using FishingMap.Data.Entities;
 using FishingMap.Domain.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
+using FishingMap.Domain.DTO.Users;
 
 namespace FishingMap.API.Controllers
 {

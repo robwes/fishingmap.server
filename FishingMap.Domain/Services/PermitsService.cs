@@ -1,31 +1,29 @@
-﻿using AutoMapper;
-using FishingMap.Domain.Data.Context;
-using FishingMap.Domain.Data.DTO.PermitObjects;
-using FishingMap.Domain.Interfaces;
-using Microsoft.EntityFrameworkCore;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using AutoMapper;
+using FishingMap.Data.Entities;
+using FishingMap.Data.Interfaces;
+using FishingMap.Domain.DTO.Permits;
+using FishingMap.Domain.Interfaces;
 
 namespace FishingMap.Domain.Services
 {
     public class PermitsService : IPermitsService
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public PermitsService(ApplicationDbContext context, IMapper mapper)
+        public PermitsService(IUnitOfWork unitOfWork, IMapper mapper)
         {
-            _context = context;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
-        public async Task<Permit> AddPermit(Permit permit)
+        public async Task<PermitDTO> AddPermit(PermitDTO permit)
         {
             var now = DateTime.Now;
-            var entity = new Data.Entities.Permit()
+            var entity = new Permit()
             {
                 Name = permit.Name,
                 Url = permit.Url,
@@ -33,56 +31,47 @@ namespace FishingMap.Domain.Services
                 Modified = now
             };
 
-            entity = _context.Permits.Add(entity).Entity;
-            await _context.SaveChangesAsync();
+            entity = _unitOfWork.Permits.Add(entity);
+            await _unitOfWork.SaveChanges();
 
-            return _mapper.Map<Permit>(entity);
+            return _mapper.Map<PermitDTO>(entity);
         }
 
         public async Task DeletePermit(int id)
         {
-            var permit = await _context.Permits.FindAsync(id);
-            if (permit != null)
-            {
-                _context.Permits.Remove(permit);
-                await _context.SaveChangesAsync();
-            }
+            await _unitOfWork.Permits.Delete(id);
+            await _unitOfWork.SaveChanges();
         }
 
-        public async Task<Permit> GetPermit(int id)
+        public async Task<PermitDTO> GetPermit(int id)
         {
-            var permit = await _context.Permits.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id);
+            var permit = await _unitOfWork.Permits.GetById(id, noTracking: true);
             if (permit != null)
             {
-                return _mapper.Map<Permit>(permit);
+                return _mapper.Map<PermitDTO>(permit);
             }
 
             return null;
         }
 
-        public async Task<IEnumerable<Permit>> GetPermits(string search)
+        public async Task<IEnumerable<PermitDTO>> GetPermits(string search)
         {
-            var query = _context.Permits.AsQueryable();
-            if (!string.IsNullOrEmpty(search))
-            {
-                query = query.Where(p => p.Name.Contains(search));
-            }
-            var permits = await query.OrderBy(p => p.Name).AsNoTracking().ToListAsync();
-            return _mapper.Map<IEnumerable<Permit>>(permits);
+            var permits = await _unitOfWork.Permits.FindPermits(search);
+            return _mapper.Map<IEnumerable<PermitDTO>>(permits);
         }
 
-        public async Task<Permit> UpdatePermit(int id, Permit permit)
+        public async Task<PermitDTO> UpdatePermit(int id, PermitDTO permit)
         {
-            var entity = await _context.Permits.FirstOrDefaultAsync(p => p.Id == id);
+            var entity = await _unitOfWork.Permits.GetById(id);
             if (entity != null)
             {
                 entity.Name = permit.Name;
                 entity.Url = permit.Url;
                 entity.Modified = DateTime.Now;
 
-                await _context.SaveChangesAsync();
+                await _unitOfWork.SaveChanges();
 
-                return _mapper.Map<Permit>(entity);
+                return _mapper.Map<PermitDTO>(entity);
             }
 
             return null;

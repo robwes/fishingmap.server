@@ -1,4 +1,4 @@
-﻿using FishingMap.Domain.Data.DTO.LocationObjects;
+﻿using FishingMap.Domain.DTO.Locations;
 using FishingMap.Domain.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -42,7 +42,7 @@ namespace FishingMap.API.Controllers
 
         // GET api/<controller>/5
         [HttpGet("{id}")]
-        public async Task<Location> Get(int id)
+        public async Task<LocationDTO> Get(int id)
         {
             var location = await _locationService.GetLocation(id);
             return location;
@@ -51,7 +51,7 @@ namespace FishingMap.API.Controllers
         // POST api/<controller>
         [HttpPost]
         [Authorize(Roles = "Administrator")]
-        public async Task<Location> Post([FromForm]LocationAdd location)
+        public async Task<LocationDTO> Post([FromForm]LocationAdd location)
         {
             var loc = await _locationService.AddLocation(location);
             return loc;
@@ -60,7 +60,7 @@ namespace FishingMap.API.Controllers
         // PUT api/<controller>/5
         [HttpPut("{id}")]
         [Authorize(Roles = "Administrator")]
-        public async Task<Location> Put(int id, [FromForm]LocationUpdate location)
+        public async Task<LocationDTO> Put(int id, [FromForm]LocationUpdate location)
         {
             var loc = await _locationService.UpdateLocation(id, location);
             return loc;

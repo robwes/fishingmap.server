@@ -1,5 +1,5 @@
 ﻿using FishingMap.API.Interfaces;
-using FishingMap.Domain.Data.DTO.UserObjects;
+using FishingMap.Domain.DTO.Users;
 using FishingMap.Domain.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -88,7 +88,7 @@ namespace FishingMap.API.Controllers
             return Unauthorized();
         }
 
-        private UserModel? GetCurrentUserIdentity()
+        private UserModel GetCurrentUserIdentity()
         {
             var identity = HttpContext.User.Identity as ClaimsIdentity;
 

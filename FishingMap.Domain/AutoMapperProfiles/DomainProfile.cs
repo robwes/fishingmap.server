@@ -1,11 +1,12 @@
 ﻿using AutoMapper;
-using FishingMap.Domain.Data.DTO.GeoObjects;
-using FishingMap.Domain.Data.DTO.ImageObjects;
-using FishingMap.Domain.Data.DTO.LocationObjects;
-using FishingMap.Domain.Data.DTO.PermitObjects;
-using FishingMap.Domain.Data.DTO.SpeciesObjects;
-using FishingMap.Domain.Data.DTO.UserObjects;
-using FishingMap.Domain.Extensions;
+using FishingMap.Data.Entities;
+using FishingMap.Common.Extensions;
+using FishingMap.Domain.DTO.Geometries;
+using FishingMap.Domain.DTO.Images;
+using FishingMap.Domain.DTO.Locations;
+using FishingMap.Domain.DTO.Permits;
+using FishingMap.Domain.DTO.Species;
+using FishingMap.Domain.DTO.Users;
 
 namespace FishingMap.Domain.AutoMapperProfiles
 {
@@ -13,19 +14,19 @@ namespace FishingMap.Domain.AutoMapperProfiles
     {
         public DomainProfile()
         {
-            CreateMap<Data.Entities.Location, LocationSummary>();
-            CreateMap<Data.Entities.Location, LocationMarker>();
-            CreateMap<Data.Entities.LocationOwner, LocationOwner>();
+            CreateMap<Location, LocationSummary>();
+            CreateMap<Location, LocationMarker>();
+            CreateMap<LocationOwner, LocationOwnerDTO>();
 
-            CreateMap<Data.Entities.Image, Image>();
-            CreateMap<Data.Entities.Permit, Permit>();
-            CreateMap<Data.Entities.Role, Role>();
+            CreateMap<Image, ImageDTO>();
+            CreateMap<Permit, PermitDTO>();
+            CreateMap<Role, RoleDTO>();
 
-            CreateMap<Data.Entities.Species, Species>();
-            CreateMap<Data.Entities.Species, SpeciesIdName>();
+            CreateMap<Species, SpeciesDTO>();
+            CreateMap<Species, SpeciesIdName>();
 
-            CreateMap<Data.Entities.User, User>();
-            CreateMap<Data.Entities.User, UserCredentials>();
+            CreateMap<User, UserDTO>();
+            CreateMap<User, UserCredentials>();
             
             CreateMap<NetTopologySuite.Geometries.Point, GeoPoint>()
                 .ForMember(dest => dest.Latitude,
@@ -35,7 +36,7 @@ namespace FishingMap.Domain.AutoMapperProfiles
                     opts => opts.MapFrom(src => src.X)
                 );
 
-            CreateMap<Data.Entities.Location, Location>()
+            CreateMap<Location, LocationDTO>()
                 .ForMember(dest => dest.Geometry,
                     opts => opts.MapFrom(src => src.Geometry.ToGeoJsonFeature())
                 );
