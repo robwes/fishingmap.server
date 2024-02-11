@@ -25,7 +25,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Services.Tests\" />
+    <ProjectReference Include="..\FishingMap.Data\FishingMap.Data.csproj" />
+    <ProjectReference Include="..\FishingMap.Domain\FishingMap.Domain.csproj" />
   </ItemGroup>
 
 </Project>

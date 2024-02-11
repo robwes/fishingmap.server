@@ -1,4 +1,4 @@
-﻿using FishingMap.Domain.Data.DTO.UserObjects;
+﻿using FishingMap.Domain.DTO.Users;
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -1,4 +1,4 @@
-﻿using FishingMap.Domain.Data.DTO.SpeciesObjects;
+﻿using FishingMap.Domain.DTO.Species;
 using FishingMap.Domain.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;

@@ -5,11 +5,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FishingMap.Domain.Data.DTO.UserObjects
+namespace FishingMap.Domain.DTO.Users
 {
-    public class UserLogin
+    public class UserCredentials
     {
-
         [Required]
         [MaxLength(50)]
         public string UserName { get; set; }
@@ -17,5 +16,9 @@ namespace FishingMap.Domain.Data.DTO.UserObjects
         [Required]
         [MinLength(7), MaxLength(100)]
         public string Password { get; set; }
+
+        [Required]
+        [MinLength(7), MaxLength(100)]
+        public string Salt { get; set; }
     }
 }

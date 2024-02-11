@@ -1,9 +1,13 @@
 ﻿using Microsoft.AspNetCore.Http;
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace FishingMap.Domain.Data.DTO.SpeciesObjects
+namespace FishingMap.Domain.DTO.Species
 {
-    public class SpeciesUpdate
+    public class SpeciesAdd
     {
         public int Id { get; set; }
         public string Name { get; set; }

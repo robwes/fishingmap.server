@@ -2,16 +2,15 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
 using AutoMapper;
 using FishingMap.Data.Entities;
 using FishingMap.Data.Interfaces;
-using FishingMap.Domain.Data.DTO.SpeciesObjects;
 using FishingMap.Common.Extensions;
 using FishingMap.Domain.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using FishingMap.Domain.DTO.Species;
 
 namespace FishingMap.Domain.Services
 {
@@ -55,45 +54,7 @@ namespace FishingMap.Domain.Services
                     await _unitOfWork.SaveChanges();
                 }
 
-                return _mapper.Map<Species, SpeciesDTO>(entity);
-            }
-
-            return null;
-        }
-
-        public async Task<IEnumerable<SpeciesDTO>> GetSpecies(string search = "")
-        {
-            Expression<Func<Species, bool>> query = null;
-            if (!string.IsNullOrEmpty(search))
-            {
-                query = s => s.Name.Contains(search);
-            }
-
-            var species = await _unitOfWork.Species.GetAll(
-                query,
-                [s => s.Images],
-                s => s.OrderBy(s => s.Name));
-
-            return _mapper.Map<IEnumerable<Species>, IEnumerable<SpeciesDTO>>(species);
-        }
-
-        public async Task<SpeciesDTO> UpdateSpecies(int id, SpeciesUpdate species)
-        {
-            var entity = await _unitOfWork.Species.GetById(id, [s => s.Images]);
-
-            if (entity != null)
-            {
-                entity.Name = species.Name;
-                entity.Description = species.Description;
-                
-                await UpdateSpeciesImages(entity, species);
-
-                entity.Modified = DateTime.Now;
-
-                //entity = _unitOfWork.Species.Update(entity);
-                await _unitOfWork.SaveChanges();
-
-                return _mapper.Map<Species, SpeciesDTO>(entity);
+                return _mapper.Map<SpeciesDTO>(entity);
             }
 
             return null;
@@ -101,7 +62,7 @@ namespace FishingMap.Domain.Services
 
         public async Task DeleteSpecies(int id)
         {
-            var species = await _unitOfWork.Species.GetById(id, [s => s.Images]);
+            var species = await _unitOfWork.Species.GetSpeciesWithImages(id);
             if (species != null)
             {
                 foreach (var image in species.Images)
@@ -116,12 +77,38 @@ namespace FishingMap.Domain.Services
             }
         }
 
+        public async Task<IEnumerable<SpeciesDTO>> GetSpecies(string search = "")
+        {
+            var species = await _unitOfWork.Species.FindSpecies(search);
+            return _mapper.Map<IEnumerable<SpeciesDTO>>(species);
+        }
+
         public async Task<SpeciesDTO> GetSpeciesById(int id)
         {
-            var species = await _unitOfWork.Species.GetById(id, [s => s.Images], true);
+            var species = await _unitOfWork.Species.GetSpeciesWithImages(id, true);
             if (species != null)
             {
-                return _mapper.Map<Species, SpeciesDTO>(species);
+                return _mapper.Map<SpeciesDTO>(species);
+            }
+
+            return null;
+        }
+
+        public async Task<SpeciesDTO> UpdateSpecies(int id, SpeciesUpdate species)
+        {
+            var entity = await _unitOfWork.Species.GetSpeciesWithImages(id);
+
+            if (entity != null)
+            {
+                entity.Name = species.Name;
+                entity.Description = species.Description;
+
+                await UpdateSpeciesImages(entity, species);
+                entity.Modified = DateTime.Now;
+
+                await _unitOfWork.SaveChanges();
+
+                return _mapper.Map<SpeciesDTO>(entity);
             }
 
             return null;
@@ -163,7 +150,7 @@ namespace FishingMap.Domain.Services
                 // Get the list of file names of the images in the update model
                 var imagesInUpdateModel = speciesUpdate.Images?.Select(img => img.FileName) ?? new List<string>();
                 // Find the images in the species entity that are not in the update model
-                var imagesToDelete = speciesEntity.Images.Where(img => !imagesInUpdateModel.Contains(img.Name));
+                var imagesToDelete = speciesEntity.Images.Where(img => !imagesInUpdateModel.Contains(img.Name)).ToList();
 
                 foreach (var image in imagesToDelete)
                 {
@@ -176,7 +163,7 @@ namespace FishingMap.Domain.Services
                 // Get the list of file names of the images in the species entity
                 var imagesInEntityModel = speciesEntity.Images?.Select(img => img.Name) ?? new List<string>();
                 // Find the images in the update model that are not in the species entity
-                var imagesToAdd = speciesUpdate.Images.Where(i => !imagesInEntityModel.Contains(i.FileName));
+                var imagesToAdd = speciesUpdate.Images.Where(i => !imagesInEntityModel.Contains(i.FileName)).ToList();
 
                 foreach (var image in imagesToAdd)
                 {

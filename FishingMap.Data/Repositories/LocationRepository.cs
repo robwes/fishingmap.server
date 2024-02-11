@@ -16,7 +16,7 @@ namespace FishingMap.Data.Repositories
             _geometryFactory = geometryFactory;
         }
 
-        public async Task<List<Location>> FindLocations(string search = "", List<int>? speciesIds = null, double? radius = null, double? orgLat = null, double? orgLng = null)
+        public async Task<List<Location>> FindLocations(string nameSearch = "", List<int>? speciesIds = null, double? radius = null, double? orgLat = null, double? orgLng = null)
         {
             var query = _context.Locations
                 .Include(l => l.Species.OrderBy(s => s.Name))
@@ -24,9 +24,9 @@ namespace FishingMap.Data.Repositories
                 .OrderBy(l => l.Name)
                 .AsQueryable();
 
-            if (!string.IsNullOrEmpty(search))
+            if (!string.IsNullOrEmpty(nameSearch))
             {
-                query = query.Where(l => l.Name.Contains(search));
+                query = query.Where(l => l.Name.Contains(nameSearch));
             }
 
             if (speciesIds?.Count > 0)
@@ -45,18 +45,11 @@ namespace FishingMap.Data.Repositories
 
         public async Task<Location?> GetLocationWithDetails(int id, bool noTracking = false)
         {
-            var query = _context.Locations
-                .Include(l => l.Species.OrderBy(s => s.Name))
-                .Include(l => l.Permits.OrderBy(p => p.Name))
-                .Include(l => l.Images)
-                .AsQueryable();
-
-            if (noTracking)
-            {
-                query = query.AsNoTracking();
-            }
-
-            return await query.FirstOrDefaultAsync(l => l.Id == id);
+            return await this.GetById(
+                id,
+                [l => l.Species.OrderBy(s => s.Name),
+                 l => l.Permits.OrderBy(p => p.Name),
+                 l => l.Images], noTracking);
         }
     }
 }

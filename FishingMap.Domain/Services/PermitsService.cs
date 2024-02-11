@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
 using AutoMapper;
 using FishingMap.Data.Entities;
 using FishingMap.Data.Interfaces;
-using FishingMap.Domain.Data.DTO.PermitObjects;
+using FishingMap.Domain.DTO.Permits;
 using FishingMap.Domain.Interfaces;
 
 namespace FishingMap.Domain.Services
@@ -58,16 +56,7 @@ namespace FishingMap.Domain.Services
 
         public async Task<IEnumerable<PermitDTO>> GetPermits(string search)
         {
-            Expression<Func<Permit, bool>> query = null;
-            if (!string.IsNullOrEmpty(search))
-            {
-                query = p => p.Name.Contains(search);
-            }
-
-            var permits = await _unitOfWork.Permits.GetAll(
-                query,
-                orderBy: p => p.OrderBy(p => p.Name));
-
+            var permits = await _unitOfWork.Permits.FindPermits(search);
             return _mapper.Map<IEnumerable<PermitDTO>>(permits);
         }
 
@@ -80,7 +69,6 @@ namespace FishingMap.Domain.Services
                 entity.Url = permit.Url;
                 entity.Modified = DateTime.Now;
 
-                // entity = _unitOfWork.Permits.Update(entity);
                 await _unitOfWork.SaveChanges();
 
                 return _mapper.Map<PermitDTO>(entity);

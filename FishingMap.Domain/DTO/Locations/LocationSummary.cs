@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
-using FishingMap.Domain.Data.DTO.GeoObjects;
-using FishingMap.Domain.Data.DTO.ImageObjects;
-using FishingMap.Domain.Data.DTO.SpeciesObjects;
+using FishingMap.Domain.DTO.Geometries;
+using FishingMap.Domain.DTO.Images;
+using FishingMap.Domain.DTO.Species;
 
-namespace FishingMap.Domain.Data.DTO.LocationObjects
+namespace FishingMap.Domain.DTO.Locations
 {
     public class LocationSummary
     {

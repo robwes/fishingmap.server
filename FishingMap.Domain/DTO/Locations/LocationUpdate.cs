@@ -1,11 +1,11 @@
-﻿using FishingMap.Domain.Data.DTO.GeoObjects;
-using FishingMap.Domain.Data.DTO.PermitObjects;
-using FishingMap.Domain.Data.DTO.SpeciesObjects;
+﻿using FishingMap.Domain.DTO.Geometries;
+using FishingMap.Domain.DTO.Permits;
+using FishingMap.Domain.DTO.Species;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 
-namespace FishingMap.Domain.Data.DTO.LocationObjects
+namespace FishingMap.Domain.DTO.Locations
 {
     public class LocationUpdate
     {

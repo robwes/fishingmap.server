@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 using AutoMapper;
 using FishingMap.Common.Utils;
 using FishingMap.Domain.Interfaces;
-using FishingMap.Domain.Data.DTO.UserObjects;
 using FishingMap.Data.Interfaces;
 using FishingMap.Data.Entities;
+using FishingMap.Domain.DTO.Users;
 
 namespace FishingMap.Domain.Services
 {
@@ -32,7 +32,7 @@ namespace FishingMap.Domain.Services
                 var roles = await _unitOfWork.Roles
                     .GetAll(r => r.Name == "User");
                     
-                var newUser = AddUserToDb(user, roles.ToArray());
+                var newUser = await AddUserToDb(user, roles.ToArray());
 
                 return _mapper.Map<UserDTO>(newUser);
             }
@@ -50,7 +50,7 @@ namespace FishingMap.Domain.Services
                 var roles = await _unitOfWork.Roles
                     .GetAll(r => r.Name == "Administrator" || r.Name == "User", noTracking: true);
 
-                var newUser = AddUserToDb(user, roles.ToArray());
+                var newUser = await AddUserToDb(user, roles.ToArray());
 
                 return _mapper.Map<UserDTO>(newUser);
             }
@@ -66,10 +66,7 @@ namespace FishingMap.Domain.Services
 
         public async Task<UserDTO> GetUser(int id)
         {
-            var user = await _unitOfWork.Users.GetById(
-                id,
-                [u => u.Roles.OrderBy(r => r.Name)],
-                true);
+            var user = await _unitOfWork.Users.GetUserWithRoles(id, true);
 
             if (user != null)
             {
@@ -138,7 +135,6 @@ namespace FishingMap.Domain.Services
                 userEntity.Email = user.Email;
                 userEntity.Modified = DateTime.Now;
 
-                // userEntity = _unitOfWork.Users.Update(userEntity);
                 await _unitOfWork.SaveChanges();
 
                 return _mapper.Map<UserDTO>(userEntity);

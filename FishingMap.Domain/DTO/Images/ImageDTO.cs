@@ -1,4 +1,4 @@
-﻿namespace FishingMap.Domain.Data.DTO.ImageObjects
+﻿namespace FishingMap.Domain.DTO.Images
 {
     public class ImageDTO
     {

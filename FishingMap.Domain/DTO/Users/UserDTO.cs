@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace FishingMap.Domain.Data.DTO.UserObjects
+namespace FishingMap.Domain.DTO.Users
 {
     public class UserDTO
     {

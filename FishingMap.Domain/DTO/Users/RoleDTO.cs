@@ -1,4 +1,4 @@
-﻿namespace FishingMap.Domain.Data.DTO.UserObjects
+﻿namespace FishingMap.Domain.DTO.Users
 {
     public class RoleDTO
     {

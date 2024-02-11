@@ -1,12 +1,12 @@
 ﻿using AutoMapper;
 using FishingMap.Data.Entities;
-using FishingMap.Domain.Data.DTO.GeoObjects;
-using FishingMap.Domain.Data.DTO.ImageObjects;
-using FishingMap.Domain.Data.DTO.LocationObjects;
-using FishingMap.Domain.Data.DTO.PermitObjects;
-using FishingMap.Domain.Data.DTO.SpeciesObjects;
-using FishingMap.Domain.Data.DTO.UserObjects;
 using FishingMap.Common.Extensions;
+using FishingMap.Domain.DTO.Geometries;
+using FishingMap.Domain.DTO.Images;
+using FishingMap.Domain.DTO.Locations;
+using FishingMap.Domain.DTO.Permits;
+using FishingMap.Domain.DTO.Species;
+using FishingMap.Domain.DTO.Users;
 
 namespace FishingMap.Domain.AutoMapperProfiles
 {

@@ -9,10 +9,10 @@ using NetTopologySuite.Geometries;
 using AutoMapper;
 using FishingMap.Common.Extensions;
 using FishingMap.Domain.Interfaces;
-using FishingMap.Domain.Data.DTO.LocationObjects;
 using FishingMap.Data.Interfaces;
 using FishingMap.Data.Entities;
 using Location = FishingMap.Data.Entities.Location;
+using FishingMap.Domain.DTO.Locations;
 
 namespace FishingMap.Domain.Services
 {
@@ -93,7 +93,7 @@ namespace FishingMap.Domain.Services
                 await _unitOfWork.SaveChanges();
             }
 
-            return _mapper.Map<Location, Data.DTO.LocationObjects.LocationDTO>(entity);
+            return _mapper.Map<Location, LocationDTO>(entity);
         }
 
         public async Task DeleteLocation(int id)
@@ -153,15 +153,14 @@ namespace FishingMap.Domain.Services
                 entity.Name = location.Name;
                 entity.Description = location.Description;
                 entity.Rules = location.Rules;
-                entity.WebSite = entity.WebSite;
+                entity.WebSite = location.WebSite;
 
-                var polygon = _geometryFactory.GeoJsonFeatureToMultiPolygon(location.Geometry);
-                if (!entity.Geometry.HasSameCoordinates(polygon))
-                {
-                    entity.Geometry = polygon;
+                if (!string.IsNullOrEmpty(location.Geometry)) {                     
+                    var multiPolygon = _geometryFactory.GeoJsonFeatureToMultiPolygon(location.Geometry);
+                    entity.Geometry = multiPolygon;
                     entity.Position = entity.Geometry.Centroid;
-                    entity.Area = polygon.Area;
-                }             
+                    entity.Area = multiPolygon.Area;
+                }
 
                 if (location.NavigationPosition != null)
                 {
@@ -183,7 +182,7 @@ namespace FishingMap.Domain.Services
                 }
                 else
                 {
-                    entity.Species.Clear();
+                    entity.Species?.Clear();
                 }
 
                 if (location.Permits != null)
@@ -194,13 +193,12 @@ namespace FishingMap.Domain.Services
                 }
                 else
                 {
-                    entity.Permits.Clear();
+                    entity.Permits?.Clear();
                 }
 
                 await UpdateLocationsImages(entity, location);
 
                 entity.Modified = DateTime.Now;
-                //entity = _unitOfWork.Locations.Update(entity);
                 await _unitOfWork.SaveChanges();
 
                 return _mapper.Map<Location, LocationDTO>(entity);
@@ -247,7 +245,7 @@ namespace FishingMap.Domain.Services
                 // Get the list of file names of the images in the update model
                 var imagesInUpdateModel = locationUpdate.Images?.Select(img => img.FileName) ?? new List<string>();
                 // Find the images in the location entity that are not in the update model
-                var imagesToDelete = locationEntity.Images.Where(img => !imagesInUpdateModel.Contains(img.Name));
+                var imagesToDelete = locationEntity.Images.Where(img => !imagesInUpdateModel.Contains(img.Name)).ToList();
 
                 foreach (var image in imagesToDelete)
                 {
@@ -260,7 +258,7 @@ namespace FishingMap.Domain.Services
                 // Get the list of file names of the images in the location entity
                 var imagesInEntityModel = locationEntity.Images?.Select(img => img.Name) ?? new List<string>();
                 // Find the images in the update model that are not in the location entity
-                var imagesToAdd = locationUpdate.Images.Where(i => !imagesInEntityModel.Contains(i.FileName));
+                var imagesToAdd = locationUpdate.Images.Where(i => !imagesInEntityModel.Contains(i.FileName)).ToList();
 
                 foreach (var image in imagesToAdd)
                 {

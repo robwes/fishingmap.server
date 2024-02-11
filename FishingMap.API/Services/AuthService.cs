@@ -1,7 +1,7 @@
 ﻿using FishingMap.API.Interfaces;
-using FishingMap.Domain.Data.DTO.UserObjects;
-using FishingMap.Domain.Interfaces;
 using FishingMap.Common.Utils;
+using FishingMap.Domain.DTO.Users;
+using FishingMap.Domain.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;

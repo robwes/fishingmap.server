@@ -1,4 +1,4 @@
-﻿using FishingMap.Domain.Data.DTO.UserObjects;
+﻿using FishingMap.Domain.DTO.Users;
 using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
 

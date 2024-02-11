@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
-using FishingMap.Domain.Data.DTO.ImageObjects;
+using FishingMap.Domain.DTO.Images;
 
-namespace FishingMap.Domain.Data.DTO.SpeciesObjects
+namespace FishingMap.Domain.DTO.Species
 {
     public class SpeciesDTO
     {

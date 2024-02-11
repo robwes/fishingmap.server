@@ -1,4 +1,4 @@
-﻿namespace FishingMap.Domain.Data.DTO.GeoObjects
+﻿namespace FishingMap.Domain.DTO.Geometries
 {
     public class GeoPoint
     {

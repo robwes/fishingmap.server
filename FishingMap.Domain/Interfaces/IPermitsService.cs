@@ -1,4 +1,4 @@
-﻿using FishingMap.Domain.Data.DTO.PermitObjects;
+﻿using FishingMap.Domain.DTO.Permits;
 using System;
 using System.Collections.Generic;
 using System.Linq;

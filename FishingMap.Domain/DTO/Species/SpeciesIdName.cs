@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FishingMap.Domain.Data.DTO.SpeciesObjects
+namespace FishingMap.Domain.DTO.Species
 {
     public class SpeciesIdName
     {
