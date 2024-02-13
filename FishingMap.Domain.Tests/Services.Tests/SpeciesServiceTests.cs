@@ -9,6 +9,7 @@ using FishingMap.Domain.Services;
 using FishingMap.Domain.DTO.Images;
 using Microsoft.AspNetCore.Http.Internal;
 using System.Text;
+using FishingMap.Domain.AutoMapperProfiles;
 
 namespace FishingMap.Domain.Tests.Services.Tests
 {
@@ -17,7 +18,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
         private readonly Mock<IFileService> _fileServiceMock;
         private readonly Mock<IFishingMapConfiguration> _configMock;
-        private readonly Mock<IMapper> _mapperMock;
+        private readonly IMapper _mapper;
         private readonly SpeciesService _speciesService;
 
         public SpeciesServiceTests()
@@ -25,7 +26,11 @@ namespace FishingMap.Domain.Tests.Services.Tests
             _unitOfWorkMock = new Mock<IUnitOfWork>();
             _fileServiceMock = new Mock<IFileService>();
             _configMock = new Mock<IFishingMapConfiguration>();
-            _mapperMock = new Mock<IMapper>();
+
+            _mapper = new MapperConfiguration(cfg =>
+            {
+                cfg.AddProfile<DomainProfile>();
+            }).CreateMapper();
 
             var speciesMock = new Mock<ISpeciesRepository>();
             _unitOfWorkMock.Setup(u => u.Species).Returns(speciesMock.Object);
@@ -36,28 +41,11 @@ namespace FishingMap.Domain.Tests.Services.Tests
             _configMock.Setup(c => c.GetPathToSpeciesImageFolder(It.IsAny<int>()))
                 .Returns((int id) => $"path/to/species/{id}");
 
-            _mapperMock.Setup(m => m.Map<SpeciesDTO>(It.IsAny<Species>()))
-                .Returns((Species sourse) => new SpeciesDTO
-                {
-                    Id = sourse.Id,
-                    Name = sourse.Name,
-                    Description = sourse.Description,
-                    Images = sourse.Images?.Select(i => new ImageDTO { Name = i.Name, Path = i.Path }).ToList() ?? new List<ImageDTO>()
-                });
-
-            _mapperMock.Setup(m => m.Map<IEnumerable<SpeciesDTO>>(It.IsAny<IEnumerable<Species>>()))
-                .Returns((IEnumerable<Species> input) => 
-                    input.Select(s => new SpeciesDTO { 
-                        Id = s.Id, Name = s.Name, 
-                        Description = s.Description,
-                        Images = s.Images?.Select(i => new ImageDTO { Name = i.Name, Path = i.Path}) ?? new List<ImageDTO>()
-                    }).ToList());
-
             _speciesService = new SpeciesService(
                 _unitOfWorkMock.Object,
                 _fileServiceMock.Object,
                 _configMock.Object,
-                _mapperMock.Object
+                _mapper
             );
         }
 

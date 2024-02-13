@@ -2,6 +2,7 @@
 using FishingMap.Common.Utils;
 using FishingMap.Data.Entities;
 using FishingMap.Data.Interfaces;
+using FishingMap.Domain.AutoMapperProfiles;
 using FishingMap.Domain.DTO.Users;
 using FishingMap.Domain.Services;
 using Moq;
@@ -12,33 +13,19 @@ namespace FishingMap.Domain.Tests.Services.Tests
     public class UserServiceTests
     {
         private Mock<IUnitOfWork> _unitOfWorkMock;
-        private Mock<IMapper> _mapperMock;
+        private IMapper _mapper;
         private UserService _userService;
 
         public UserServiceTests()
         {
             _unitOfWorkMock = new Mock<IUnitOfWork>();
-            _mapperMock = new Mock<IMapper>();
-            _userService = new UserService(_unitOfWorkMock.Object, _mapperMock.Object);
 
-            _mapperMock.Setup(m => m.Map<UserDTO>(It.IsAny<User>()))
-                .Returns((User source) => new UserDTO
-                {
-                    Id = source.Id,
-                    FirstName = source.FirstName,
-                    LastName = source.LastName,
-                    UserName = source.UserName,
-                    Email = source.Email,
-                    Roles = source.Roles?.Select(r => new RoleDTO { Name = r.Name }).ToList() ?? new List<RoleDTO>()
-                });
+            _mapper = new MapperConfiguration(cfg =>
+            {
+                cfg.AddProfile<DomainProfile>();
+            }).CreateMapper();
 
-            _mapperMock.Setup(m => m.Map<UserCredentials>(It.IsAny<User>()))
-                .Returns((User source) => new UserCredentials
-                {
-                    UserName = source.UserName,
-                    Password = source.Password,
-                    Salt = source.Salt
-                });
+            _userService = new UserService(_unitOfWorkMock.Object, _mapper);
         }
 
         [Fact]

@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using FishingMap.Data.Entities;
 using FishingMap.Data.Interfaces;
+using FishingMap.Domain.AutoMapperProfiles;
 using FishingMap.Domain.DTO.Permits;
 using FishingMap.Domain.Services;
 using Moq;
@@ -10,28 +11,19 @@ namespace FishingMap.Domain.Tests.Services.Tests
     public class PermitServiceTests
     {
         private Mock<IUnitOfWork> _unitOfWorkMock;
-        private Mock<IMapper> _mapperMock;
+        private IMapper _mapper;
         private PermitsService _service;
 
         public PermitServiceTests()
         {
             _unitOfWorkMock = new Mock<IUnitOfWork>();
-            _mapperMock = new Mock<IMapper>();
-            _service = new PermitsService(_unitOfWorkMock.Object, _mapperMock.Object);
 
-            _mapperMock.Setup(m => m.Map<PermitDTO>(It.IsAny<Permit>()))
-                .Returns((Permit source) => new PermitDTO
-                {
-                    Name = source.Name,
-                    Url = source.Url
-                });
+            _mapper = new MapperConfiguration(cfg =>
+            {
+                cfg.AddProfile<DomainProfile>();
+            }).CreateMapper();
 
-            _mapperMock.Setup(m => m.Map<IEnumerable<PermitDTO>>(It.IsAny<IEnumerable<Permit>>()))
-                .Returns((IEnumerable<Permit> source) => source.Select(p => new PermitDTO
-                {
-                    Name = p.Name,
-                    Url = p.Url
-                }));
+            _service = new PermitsService(_unitOfWorkMock.Object, _mapper);
         }
 
         [Fact]
