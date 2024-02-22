@@ -1,21 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace FishingMap.Domain.DTO.Users
 {
     public class UserLogin
     {
-
         [Required]
         [MaxLength(50)]
-        public string UserName { get; set; }
+        public string UserName { get; set; } = string.Empty;
 
         [Required]
         [MinLength(7), MaxLength(100)]
-        public string Password { get; set; }
+        public string Password { get; set; } = string.Empty;
     }
 }

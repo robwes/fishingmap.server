@@ -115,7 +115,7 @@ namespace FishingMap.Domain.Services
             }
         }
 
-        public async Task<LocationDTO> GetLocation(int id)
+        public async Task<LocationDTO?> GetLocation(int id)
         {
             var location = await _unitOfWork.Locations.GetLocationWithDetails(id, true);
 
@@ -126,25 +126,25 @@ namespace FishingMap.Domain.Services
             return null;
         }
 
-        public async Task<IEnumerable<LocationSummary>> GetLocations(string search = "", List<int> speciesIds = null, double? radius = null, double? orgLat = null, double? orgLng = null)
+        public async Task<IEnumerable<LocationSummary>> GetLocations(string search = "", List<int>? speciesIds = null, double? radius = null, double? orgLat = null, double? orgLng = null)
         {
             var locations = await _unitOfWork.Locations.FindLocations(search, speciesIds, radius, orgLat, orgLng);
             return _mapper.Map<IEnumerable<Location>, IEnumerable<LocationSummary>>(locations);
         }
 
-        public async Task<IEnumerable<LocationMarker>> GetMarkers(string search = "", List<int> speciesIds = null, double? radius = null, double? orgLat = null, double? orgLng = null)
+        public async Task<IEnumerable<LocationMarker>> GetMarkers(string search = "", List<int>? speciesIds = null, double? radius = null, double? orgLat = null, double? orgLng = null)
         {
             var locations = await _unitOfWork.Locations.FindLocations(search, speciesIds, radius, orgLat, orgLng);
             return _mapper.Map<IEnumerable<Location>, IEnumerable<LocationMarker>>(locations);
         }
 
-        public async Task<IEnumerable<LocationSummary>> GetLocationsSummary(string search = "", List<int> speciesIds = null, double? radius = null, double? orgLat = null, double? orgLng = null)
+        public async Task<IEnumerable<LocationSummary>> GetLocationsSummary(string search = "", List<int>? speciesIds = null, double? radius = null, double? orgLat = null, double? orgLng = null)
         {
             var locations = await _unitOfWork.Locations.FindLocations(search, speciesIds, radius, orgLat, orgLng);
             return _mapper.Map<IEnumerable<Location>, IEnumerable<LocationSummary>>(locations);
         }
 
-        public async Task<LocationDTO> UpdateLocation(int id, LocationUpdate location)
+        public async Task<LocationDTO?> UpdateLocation(int id, LocationUpdate location)
         {
             var entity = await _unitOfWork.Locations.GetLocationWithDetails(id);
             
@@ -253,12 +253,12 @@ namespace FishingMap.Domain.Services
                 }
             }
 
-            if (!locationUpdate.Images.IsNullOrEmpty())
+            if (!locationUpdate.Images!.IsNullOrEmpty())
             {
                 // Get the list of file names of the images in the location entity
                 var imagesInEntityModel = locationEntity.Images?.Select(img => img.Name) ?? new List<string>();
                 // Find the images in the update model that are not in the location entity
-                var imagesToAdd = locationUpdate.Images.Where(i => !imagesInEntityModel.Contains(i.FileName)).ToList();
+                var imagesToAdd = locationUpdate.Images!.Where(i => !imagesInEntityModel.Contains(i.FileName)).ToList();
 
                 foreach (var image in imagesToAdd)
                 {

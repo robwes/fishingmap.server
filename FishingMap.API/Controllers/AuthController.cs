@@ -2,23 +2,19 @@
 using FishingMap.Domain.DTO.Users;
 using FishingMap.Domain.Interfaces;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Linq;
 using System.Security.Claims;
-using System.Threading.Tasks;
 
 namespace FishingMap.API.Controllers
 {
     public class UserModel
     {
-        public string Username { get; set; }
-        public string Password { get; set; }
-        public string EmailAddress { get; set; }
-        public string Role { get; set; }
-        public string Surname { get; set; }
-        public string GivenName { get; set; }
+        public string? Username { get; set; }
+        public string? Password { get; set; }
+        public string? EmailAddress { get; set; }
+        public string? Role { get; set; }
+        public string? Surname { get; set; }
+        public string? GivenName { get; set; }
     }
 
     [Route("api/[controller]")]
@@ -76,7 +72,7 @@ namespace FishingMap.API.Controllers
         public async Task<IActionResult> WhoAmI()
         {
             var currentUserIdentity = GetCurrentUserIdentity();
-            if (currentUserIdentity != null)
+            if (currentUserIdentity != null && currentUserIdentity.Username != null)
             {
                 var currentUser = await _userService.GetUserByUsername(currentUserIdentity.Username);
                 if (currentUser != null)
@@ -88,7 +84,7 @@ namespace FishingMap.API.Controllers
             return Unauthorized();
         }
 
-        private UserModel GetCurrentUserIdentity()
+        private UserModel? GetCurrentUserIdentity()
         {
             var identity = HttpContext.User.Identity as ClaimsIdentity;
 

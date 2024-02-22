@@ -6,6 +6,8 @@
     <ApplicationIcon />
     <StartupObject />
     <UserSecretsId>f4581137-6014-4501-a8e6-9568c310dc0d</UserSecretsId>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>

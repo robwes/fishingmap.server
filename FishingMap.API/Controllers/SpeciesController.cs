@@ -1,11 +1,7 @@
 ﻿using FishingMap.Domain.DTO.Species;
 using FishingMap.Domain.Interfaces;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
 
 namespace FishingMap.API.Controllers
 {

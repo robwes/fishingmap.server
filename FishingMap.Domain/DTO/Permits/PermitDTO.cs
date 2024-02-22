@@ -8,9 +8,9 @@ namespace FishingMap.Domain.DTO.Permits
 
         [Required]
         [MaxLength(100)]
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
         [MaxLength(500)]
-        public string Url { get; set; }
+        public string? Url { get; set; }
     }
 }

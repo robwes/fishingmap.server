@@ -157,7 +157,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
         {
             // Arrange
             var locationId = 1;
-            _unitOfWorkMock.Setup(u => u.Locations.GetLocationWithDetails(locationId, true)).ReturnsAsync((Location)null);
+            _unitOfWorkMock.Setup(u => u.Locations.GetLocationWithDetails(locationId, true)).ReturnsAsync((Location?)null);
 
             // Act
             var result = await _locationService.GetLocation(locationId);
@@ -201,7 +201,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
             // Arrange
             var locationId = 1;
             var locationUpdate = new LocationUpdate();
-            _unitOfWorkMock.Setup(u => u.Locations.GetLocationWithDetails(locationId, false)).ReturnsAsync((Location)null);
+            _unitOfWorkMock.Setup(u => u.Locations.GetLocationWithDetails(locationId, false)).ReturnsAsync((Location?)null);
 
             // Act
             var result = await _locationService.UpdateLocation(locationId, locationUpdate);
@@ -251,7 +251,6 @@ namespace FishingMap.Domain.Tests.Services.Tests
                 Description = "Updated Description",
                 Rules = "Updated Rules",
                 WebSite = "Updated Website",
-                Species = null,
                 Geometry = "{\"type\":\"Feature\",\"geometry\":{\"type\":\"MultiPolygon\",\"coordinates\":[[[[30.0,20.0],[45.0,40.0],[10.0,40.0],[30.0,20.0]]]]},\"properties\":null}"
             };
             var location = new Location { Id = locationId, Species = new List<Species> { new Species { Id = 1, Name = "Existing Species" } } };
@@ -400,8 +399,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
                 Name = "Updated Location",
                 Description = "Updated Description",
                 Rules = "Updated Rules",
-                WebSite = "Updated Website",
-                Images = null
+                WebSite = "Updated Website"
             };
             var location = new Location { Id = locationId, Images = new List<Image> { new Image { Id = 1, Name = "image1.jpg", Path = "path/to/image1.jpg" } } };
             _unitOfWorkMock.Setup(u => u.Locations.GetLocationWithDetails(locationId, false)).ReturnsAsync(location);

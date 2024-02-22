@@ -2,11 +2,6 @@
 using Azure.Storage.Files.Shares;
 using Azure.Storage.Files.Shares.Models;
 using FishingMap.Domain.Interfaces;
-using Microsoft.AspNetCore.Http;
-using System;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace FishingMap.API.Services
 {
@@ -50,7 +45,7 @@ namespace FishingMap.API.Services
             return string.Join("/", subFolderNames) + "/" + uniqueFileName;
         }
 
-        public async Task<ContentTypeStream> GetFile(string filePath)
+        public async Task<ContentTypeStream?> GetFile(string filePath)
         {
             // Get the file from the file share
             var directoryClient = _shareClient.GetRootDirectoryClient();

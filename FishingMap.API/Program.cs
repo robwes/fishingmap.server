@@ -1,24 +1,19 @@
-﻿using FishingMap.Data.Context;
-using FishingMap.Domain.Interfaces;
-using FishingMap.Domain.Services;
-using NetTopologySuite.Geometries;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
-using FishingMap.Domain.AutoMapperProfiles;
-using Microsoft.AspNetCore.HttpOverrides;
-using FishingMap.API;
+﻿using FishingMap.API;
+using FishingMap.API.Interfaces;
 using FishingMap.API.ModelBinders;
 using FishingMap.API.Services;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
-using System.Threading.Tasks;
-using FishingMap.API.Interfaces;
+using FishingMap.Data.Context;
 using FishingMap.Data.Interfaces;
 using FishingMap.Data.Repositories;
+using FishingMap.Domain.AutoMapperProfiles;
+using FishingMap.Domain.Interfaces;
+using FishingMap.Domain.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using NetTopologySuite.Geometries;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -47,7 +42,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
-                builder.Configuration["Jwt:Key"]))
+                builder.Configuration["Jwt:Key"]!))
         };
 
         options.Events = new JwtBearerEvents

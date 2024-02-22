@@ -1,14 +1,11 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
-using System;
-using System.Linq;
 
 namespace FishingMap.API.ModelBinders
 {
     public class FormDataJsonBinderProvider : IModelBinderProvider
     {
-        public IModelBinder GetBinder(ModelBinderProviderContext context)
+        public IModelBinder? GetBinder(ModelBinderProviderContext context)
         {
             if (context == null) throw new ArgumentNullException(nameof(context));
 
@@ -17,8 +14,10 @@ namespace FishingMap.API.ModelBinders
 
             // Do not use this provider if the binding target is not a property
             var propName = context.Metadata.PropertyName;
+            if (propName == null) return null;
+
             var propInfo = context.Metadata.ContainerType?.GetProperty(propName);
-            if (propName == null || propInfo == null) return null;
+            if (propInfo == null) return null;
 
             // Do not use this provider if the target property type implements IFormFile
             if (propInfo.PropertyType.IsAssignableFrom(typeof(IFormFile))) return null;

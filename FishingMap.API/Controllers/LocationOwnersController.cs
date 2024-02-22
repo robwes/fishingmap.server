@@ -1,6 +1,5 @@
 ﻿using FishingMap.Domain.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
 
 namespace FishingMap.API.Controllers
 {

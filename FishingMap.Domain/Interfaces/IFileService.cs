@@ -8,6 +8,6 @@ namespace FishingMap.Domain.Interfaces
         Task<string> AddFile(IFormFile image, string folder);
         Task DeleteFile(string path);
         Task DeleteFolder(string path);
-        Task<ContentTypeStream> GetFile(string filePath);
+        Task<ContentTypeStream?> GetFile(string filePath);
     }
 }

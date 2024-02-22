@@ -1,7 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Newtonsoft.Json;
-using System;
-using System.Threading.Tasks;
 
 namespace FishingMap.API.ModelBinders
 {

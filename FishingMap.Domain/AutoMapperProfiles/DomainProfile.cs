@@ -38,7 +38,9 @@ namespace FishingMap.Domain.AutoMapperProfiles
 
             CreateMap<Location, LocationDTO>()
                 .ForMember(dest => dest.Geometry,
-                    opts => opts.MapFrom(src => src.Geometry.ToGeoJsonFeature())
+                    opts => opts.MapFrom(src => 
+                        src.Geometry != null ? src.Geometry.ToGeoJsonFeature() : null
+                    )
                 );
         }
     }

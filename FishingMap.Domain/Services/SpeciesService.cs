@@ -1,16 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using AutoMapper;
+﻿using AutoMapper;
+using FishingMap.Common.Extensions;
 using FishingMap.Data.Entities;
 using FishingMap.Data.Interfaces;
-using FishingMap.Common.Extensions;
+using FishingMap.Domain.DTO.Species;
 using FishingMap.Domain.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
-using FishingMap.Domain.DTO.Species;
 
 namespace FishingMap.Domain.Services
 {
@@ -29,7 +24,7 @@ namespace FishingMap.Domain.Services
             _mapper = mapper;
         }
 
-        public async Task<SpeciesDTO> AddSpecies(SpeciesAdd species)
+        public async Task<SpeciesDTO?> AddSpecies(SpeciesAdd species)
         {
             var entity = new Species
             {
@@ -83,7 +78,7 @@ namespace FishingMap.Domain.Services
             return _mapper.Map<IEnumerable<SpeciesDTO>>(species);
         }
 
-        public async Task<SpeciesDTO> GetSpeciesById(int id)
+        public async Task<SpeciesDTO?> GetSpeciesById(int id)
         {
             var species = await _unitOfWork.Species.GetSpeciesWithImages(id, true);
             if (species != null)
@@ -94,7 +89,7 @@ namespace FishingMap.Domain.Services
             return null;
         }
 
-        public async Task<SpeciesDTO> UpdateSpecies(int id, SpeciesUpdate species)
+        public async Task<SpeciesDTO?> UpdateSpecies(int id, SpeciesUpdate species)
         {
             var entity = await _unitOfWork.Species.GetSpeciesWithImages(id);
 
@@ -158,12 +153,12 @@ namespace FishingMap.Domain.Services
                 }
             }
 
-            if (!speciesUpdate.Images.IsNullOrEmpty())
+            if (!speciesUpdate.Images!.IsNullOrEmpty())
             {
                 // Get the list of file names of the images in the species entity
                 var imagesInEntityModel = speciesEntity.Images?.Select(img => img.Name) ?? new List<string>();
                 // Find the images in the update model that are not in the species entity
-                var imagesToAdd = speciesUpdate.Images.Where(i => !imagesInEntityModel.Contains(i.FileName)).ToList();
+                var imagesToAdd = speciesUpdate.Images!.Where(i => !imagesInEntityModel.Contains(i.FileName)).ToList();
 
                 foreach (var image in imagesToAdd)
                 {

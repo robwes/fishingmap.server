@@ -2,8 +2,6 @@
 using FishingMap.Domain.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace FishingMap.API.Controllers
 {
@@ -20,21 +18,21 @@ namespace FishingMap.API.Controllers
 
         // GET: api/Locations
         [HttpGet]
-        public async Task<IEnumerable<LocationSummary>> Get([FromQuery] string search = "", [FromQuery] List<int> sIds = null, [FromQuery] double? radius = null, [FromQuery] double? orgLat = null, [FromQuery] double? orgLng = null)
+        public async Task<IEnumerable<LocationSummary>> Get([FromQuery] string search = "", [FromQuery] List<int>? sIds = null, [FromQuery] double? radius = null, [FromQuery] double? orgLat = null, [FromQuery] double? orgLng = null)
         {
             var locations = await _locationService.GetLocations(search, sIds, radius, orgLat, orgLng);
             return locations;
         }
 
         [HttpGet("markers")]
-        public async Task<IEnumerable<LocationMarker>> Markers([FromQuery] string search = "", [FromQuery] List<int> sIds = null, [FromQuery] double? radius = null, [FromQuery] double? orgLat = null, [FromQuery] double? orgLng = null)
+        public async Task<IEnumerable<LocationMarker>> Markers([FromQuery] string search = "", [FromQuery] List<int>? sIds = null, [FromQuery] double? radius = null, [FromQuery] double? orgLat = null, [FromQuery] double? orgLng = null)
         {
             var markers = await _locationService.GetMarkers(search, sIds, radius, orgLat, orgLng);
             return markers;
         }
 
         [HttpGet("summary")]
-        public async Task<IEnumerable<LocationSummary>> LocationsSummary([FromQuery] string search = "", [FromQuery] List<int> sIds = null, [FromQuery] double? radius = null, [FromQuery] double? orgLat = null, [FromQuery] double? orgLng = null)
+        public async Task<IEnumerable<LocationSummary>> LocationsSummary([FromQuery] string search = "", [FromQuery] List<int>? sIds = null, [FromQuery] double? radius = null, [FromQuery] double? orgLat = null, [FromQuery] double? orgLng = null)
         {
             var locations = await _locationService.GetLocationsSummary(search, sIds, radius, orgLat, orgLng);
             return locations;
@@ -42,7 +40,7 @@ namespace FishingMap.API.Controllers
 
         // GET api/<controller>/5
         [HttpGet("{id}")]
-        public async Task<LocationDTO> Get(int id)
+        public async Task<LocationDTO?> Get(int id)
         {
             var location = await _locationService.GetLocation(id);
             return location;
@@ -60,7 +58,7 @@ namespace FishingMap.API.Controllers
         // PUT api/<controller>/5
         [HttpPut("{id}")]
         [Authorize(Roles = "Administrator")]
-        public async Task<LocationDTO> Put(int id, [FromForm]LocationUpdate location)
+        public async Task<LocationDTO?> Put(int id, [FromForm]LocationUpdate location)
         {
             var loc = await _locationService.UpdateLocation(id, location);
             return loc;

@@ -43,7 +43,7 @@ namespace FishingMap.Domain.Services
             await _unitOfWork.SaveChanges();
         }
 
-        public async Task<PermitDTO> GetPermit(int id)
+        public async Task<PermitDTO?> GetPermit(int id)
         {
             var permit = await _unitOfWork.Permits.GetById(id, noTracking: true);
             if (permit != null)
@@ -60,7 +60,7 @@ namespace FishingMap.Domain.Services
             return _mapper.Map<IEnumerable<PermitDTO>>(permits);
         }
 
-        public async Task<PermitDTO> UpdatePermit(int id, PermitDTO permit)
+        public async Task<PermitDTO?> UpdatePermit(int id, PermitDTO permit)
         {
             var entity = await _unitOfWork.Permits.GetById(id);
             if (entity != null)

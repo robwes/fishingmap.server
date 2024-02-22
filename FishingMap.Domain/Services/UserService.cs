@@ -22,7 +22,7 @@ namespace FishingMap.Domain.Services
             _mapper = mapper;
         }
 
-        public async Task<UserDTO> AddUser(UserAdd user)
+        public async Task<UserDTO?> AddUser(UserAdd user)
         {
             if (!string.IsNullOrWhiteSpace(user.Password) &&
                 !await _unitOfWork.Users.Any(u =>
@@ -40,7 +40,7 @@ namespace FishingMap.Domain.Services
             return null;
         }
 
-        public async Task<UserDTO> AddAdministrator(UserAdd user)
+        public async Task<UserDTO?> AddAdministrator(UserAdd user)
         {
             if (!string.IsNullOrWhiteSpace(user.Password) &&
                 !await _unitOfWork.Users.Any(u =>
@@ -64,7 +64,7 @@ namespace FishingMap.Domain.Services
             await _unitOfWork.SaveChanges();
         }
 
-        public async Task<UserDTO> GetUser(int id)
+        public async Task<UserDTO?> GetUser(int id)
         {
             var user = await _unitOfWork.Users.GetUserWithRoles(id, true);
 
@@ -75,7 +75,7 @@ namespace FishingMap.Domain.Services
             return null;
         }
 
-        public async Task<UserDTO> GetUserByEmail(string email)
+        public async Task<UserDTO?> GetUserByEmail(string email)
         {
             var user = await _unitOfWork.Users.Find(
                                 u => u.Email == email,
@@ -89,7 +89,7 @@ namespace FishingMap.Domain.Services
             return null;
         }
 
-        public async Task<UserDTO> GetUserByUsername(string username)
+        public async Task<UserDTO?> GetUserByUsername(string username)
         {
             var user = await _unitOfWork.Users.Find(
                                 u => u.UserName == username,
@@ -104,7 +104,7 @@ namespace FishingMap.Domain.Services
             return null;
         }
 
-        public async Task<UserCredentials> GetUserCredentials(int id)
+        public async Task<UserCredentials?> GetUserCredentials(int id)
         {
             var user = await _unitOfWork.Users.GetById(id, noTracking: true);
             if (user != null)
@@ -125,7 +125,7 @@ namespace FishingMap.Domain.Services
             return _mapper.Map<IEnumerable<UserDTO>>(users);
         }
 
-        public async Task<UserDTO> UpdateUserDetails(int id, UserDetailsUpdate user)
+        public async Task<UserDTO?> UpdateUserDetails(int id, UserDetailsUpdate user)
         {
             var userEntity = await _unitOfWork.Users.GetById(id);
             if (userEntity != null)
