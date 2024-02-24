@@ -14,7 +14,9 @@ namespace FishingMap.Data.Entities
 
         public string? Description { get; set; }
         public string? Rules { get; set; }
-        public MultiPolygon? Geometry { get; set; }
+
+        [Required]
+        public MultiPolygon Geometry { get; set; } = new MultiPolygon([]) { SRID = 4326};
 
         [Required]
         public Point Position { get; set; } = new Point(0, 0) { SRID = 4326 };

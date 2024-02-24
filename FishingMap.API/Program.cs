@@ -61,8 +61,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAutoMapper(typeof(DomainProfile));
 
+// Register the database context
 var connectionString = builder.Configuration.GetConnectionString("FishingMapDatabase");
 builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString, opt => opt.UseNetTopologySuite()), ServiceLifetime.Scoped);
+builder.Services.AddScoped<DbInitializer>();
 
 // Register the configuration
 builder.Services.AddSingleton<IFishingMapConfiguration, FishingMapConfiguration>();
@@ -96,6 +98,14 @@ builder.Services.AddScoped<IPermitsService, PermitsService>();
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 var app = builder.Build();
+
+// Database initialization
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var dbInitializer = services.GetRequiredService<DbInitializer>();
+    await dbInitializer.InitializeAsync();
+}
 
 app.UseForwardedHeaders();
 

@@ -1,5 +1,4 @@
 ﻿using FishingMap.Data.Entities;
-using FishingMap.Common.Utils;
 using Microsoft.EntityFrameworkCore;
 
 namespace FishingMap.Data.Context
@@ -28,29 +27,6 @@ namespace FishingMap.Data.Context
                 .HasIndex(u => new { u.UserName, u.Email })
                 .IsUnique();
 
-            var passwordSalt = Cryptography.CreateSalt();
-            var passwordHash = Cryptography.CreateHash("admin12", passwordSalt);
-            var now = DateTime.Now;
-
-            var adminRole = new Role { Id = 1, Name = "Administrator" };
-            var userRole = new Role { Id = 2, Name = "User" };
-
-            var adminUser = new User
-            {
-                Id = 1,
-                FirstName = "Lord Admin",
-                LastName = "First of His Name",
-                Email = "admin@fishingmap.se",
-                UserName = "admin",
-                Password = passwordHash,
-                Salt = passwordSalt,
-                Created = now,
-                Modified = now
-            };
-
-            modelBuilder.Entity<Role>().HasData(adminRole, userRole);
-            modelBuilder.Entity<User>().HasData(adminUser);
-
             modelBuilder.Entity<User>()
                 .HasMany(u => u.Roles)
                 .WithMany(r => r.Users)
@@ -61,10 +37,6 @@ namespace FishingMap.Data.Context
                     ru =>
                     {
                         ru.HasKey("RoleId", "UserId");
-                        ru.HasData(
-                            new { RoleId = adminRole.Id, UserId = adminUser.Id },
-                            new { RoleId = userRole.Id, UserId = adminUser.Id }
-                            );
                     });
         }
     }
