@@ -30,7 +30,7 @@ namespace FishingMap.API.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody]UserLogin userLogin)
+        public async Task<ActionResult<UserDTO>> Login([FromBody]UserLogin userLogin)
         {
             var user = await _userService.GetUserByUsername(userLogin.UserName);
             if (user == null)
@@ -38,7 +38,12 @@ namespace FishingMap.API.Controllers
                 return NotFound();
             }
 
-            var userCredentials = await _userService.GetUserCredentials(user.Id);
+            var userCredentials = await _userService.GetUserCredentialsByUserName(userLogin.UserName);
+            if (userCredentials == null)
+            {
+                return NotFound();
+            }
+
             if (!_authService.ValidateUserPassword(userCredentials, userLogin.Password))
             {
                 return BadRequest(new { message = "Invalid credentials" });
@@ -69,7 +74,7 @@ namespace FishingMap.API.Controllers
 
         [HttpGet("whoami")]
         [Authorize]
-        public async Task<IActionResult> WhoAmI()
+        public async Task<ActionResult<UserDTO>> WhoAmI()
         {
             var currentUserIdentity = GetCurrentUserIdentity();
             if (currentUserIdentity != null && currentUserIdentity.Username != null)

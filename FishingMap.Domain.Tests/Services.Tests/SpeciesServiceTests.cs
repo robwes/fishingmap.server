@@ -275,6 +275,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
             var result = await _speciesService.UpdateSpecies(speciesId, speciesUpdate);
 
             // Assert
+            Assert.NotNull(result);
             Assert.Equal(speciesUpdate.Id, result.Id);
             Assert.Equal(speciesUpdate.Name, result.Name);
             Assert.Equal(speciesUpdate.Description, result.Description);
@@ -336,6 +337,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
             var result = await _speciesService.UpdateSpecies(speciesId, speciesUpdate);
 
             // Assert
+            Assert.NotNull(result);
             Assert.Equal(speciesUpdate.Id, result.Id);
             Assert.Equal(speciesUpdate.Name, result.Name);
             Assert.Equal(speciesUpdate.Description, result.Description);
@@ -377,6 +379,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
             var result = await _speciesService.UpdateSpecies(speciesId, speciesUpdate);
 
             // Assert
+            Assert.NotNull(result);
             Assert.Equal(speciesUpdate.Id, result.Id);
             Assert.Equal(speciesUpdate.Name, result.Name);
             Assert.Equal(speciesUpdate.Description, result.Description);

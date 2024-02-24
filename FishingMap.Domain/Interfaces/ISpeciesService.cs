@@ -1,8 +1,4 @@
 ﻿using FishingMap.Domain.DTO.Species;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FishingMap.Domain.Interfaces
 {

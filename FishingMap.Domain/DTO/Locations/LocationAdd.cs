@@ -14,7 +14,9 @@ namespace FishingMap.Domain.DTO.Locations
 
         public string? Description { get; set; }
         public string? Rules { get; set; }
-        public string? Geometry { get; set; }
+
+        [Required]
+        public string Geometry { get; set; } = string.Empty;
 
         [Required]
         public GeoPoint Position { get; set; } = new GeoPoint();

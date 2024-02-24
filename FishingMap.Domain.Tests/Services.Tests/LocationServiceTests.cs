@@ -279,7 +279,8 @@ namespace FishingMap.Domain.Tests.Services.Tests
                 Description = "Updated Description",
                 Rules = "Updated Rules",
                 WebSite = "Updated Website",
-                Species = new List<SpeciesDTO> { new SpeciesDTO { Id = 1, Name = "Existing Species" }, new SpeciesDTO { Id = 2, Name = "New Species" } }
+                Species = new List<SpeciesDTO> { new SpeciesDTO { Id = 1, Name = "Existing Species" }, new SpeciesDTO { Id = 2, Name = "New Species" } },
+                Geometry = "{\"type\":\"Feature\",\"geometry\":{\"type\":\"MultiPolygon\",\"coordinates\":[[[[40.1,30.0],[55.0,50.0],[20.0,50.0],[40.1,30.0]]]]},\"properties\":null}"
             };
             var location = new Location { Id = locationId, Species = new List<Species> { new Species { Id = 1, Name = "Existing Species" } } };
             _unitOfWorkMock.Setup(u => u.Locations.GetLocationWithDetails(locationId, false)).ReturnsAsync(location);
@@ -309,7 +310,8 @@ namespace FishingMap.Domain.Tests.Services.Tests
                 Description = "Updated Description",
                 Rules = "Updated Rules",
                 WebSite = "Updated Website",
-                Species = new List<SpeciesDTO> { new SpeciesDTO { Id = 1, Name = "Remaining Species" } }
+                Species = new List<SpeciesDTO> { new SpeciesDTO { Id = 1, Name = "Remaining Species" } },
+                Geometry = "{\"type\":\"Feature\",\"geometry\":{\"type\":\"MultiPolygon\",\"coordinates\":[[[[40.1,30.0],[55.0,50.0],[20.0,50.0],[40.1,30.0]]]]},\"properties\":null}"
             };
             var location = new Location { Id = locationId, Species = new List<Species> { new Species { Id = 1, Name = "Remaining Species" }, new Species { Id = 2, Name = "Deleted Species" } } };
             _unitOfWorkMock.Setup(u => u.Locations.GetLocationWithDetails(locationId, false)).ReturnsAsync(location);
@@ -370,7 +372,8 @@ namespace FishingMap.Domain.Tests.Services.Tests
                 Description = "Updated Description",
                 Rules = "Updated Rules",
                 WebSite = "Updated Website",
-                Images = new List<IFormFile> { new FormFile(new MemoryStream(), 0, 0, "Data", "image2.jpg") }
+                Images = new List<IFormFile> { new FormFile(new MemoryStream(), 0, 0, "Data", "image2.jpg") },
+                Geometry = "{\"type\":\"Feature\",\"geometry\":{\"type\":\"MultiPolygon\",\"coordinates\":[[[[40.1,30.0],[55.0,50.0],[20.0,50.0],[40.1,30.0]]]]},\"properties\":null}"
             };
             var location = new Location { Id = locationId, Images = new List<Image> { new Image { Id = 1, Name = "image1.jpg", Path = "path/to/image1.jpg" } } };
             _unitOfWorkMock.Setup(u => u.Locations.GetLocationWithDetails(locationId, false)).ReturnsAsync(location);
@@ -399,7 +402,8 @@ namespace FishingMap.Domain.Tests.Services.Tests
                 Name = "Updated Location",
                 Description = "Updated Description",
                 Rules = "Updated Rules",
-                WebSite = "Updated Website"
+                WebSite = "Updated Website",
+                Geometry = "{\"type\":\"Feature\",\"geometry\":{\"type\":\"MultiPolygon\",\"coordinates\":[[[[40.1,30.0],[55.0,50.0],[20.0,50.0],[40.1,30.0]]]]},\"properties\":null}"
             };
             var location = new Location { Id = locationId, Images = new List<Image> { new Image { Id = 1, Name = "image1.jpg", Path = "path/to/image1.jpg" } } };
             _unitOfWorkMock.Setup(u => u.Locations.GetLocationWithDetails(locationId, false)).ReturnsAsync(location);

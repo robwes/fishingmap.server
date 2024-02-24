@@ -1,9 +1,4 @@
 ﻿using FishingMap.Domain.DTO.Users;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FishingMap.Domain.Interfaces
 {
@@ -16,6 +11,7 @@ namespace FishingMap.Domain.Interfaces
         Task<UserDTO?> GetUserByEmail(string email);
         Task<UserDTO?> GetUserByUsername(string username);
         Task<UserCredentials?> GetUserCredentials(int id);
+        Task<UserCredentials?> GetUserCredentialsByUserName(string username);
         Task<IEnumerable<UserDTO>> GetUsers();
         Task<UserDTO?> UpdateUserDetails(int id, UserDetailsUpdate user);
         Task<bool> UpdateUserPassword(int id, string password);

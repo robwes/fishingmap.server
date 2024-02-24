@@ -20,44 +20,55 @@ namespace FishingMap.API.Controllers
 
         // GET: api/<PermitsController>
         [HttpGet]
-        public async Task<IEnumerable<PermitDTO>> Get([FromQuery] string search = "")
+        public async Task<ActionResult<PermitDTO>> Get([FromQuery] string search = "")
         {
             var permits = await _permitService.GetPermits(search);
-            return permits;
+            return Ok(permits);
         }
 
         // GET api/<PermitsController>/5
         [HttpGet("{id}")]
-        public async Task<PermitDTO> Get(int id)
+        public async Task<ActionResult<PermitDTO>> Get(int id)
         {
             var permit = await _permitService.GetPermit(id);
-            return permit;
+            if (permit == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(permit);
         }
 
         // POST api/<PermitsController>
         [HttpPost]
         [Authorize(Roles = "Administrator")]
-        public async Task<PermitDTO> Post([FromForm] PermitDTO permit)
+        public async Task<ActionResult<PermitDTO>> Post([FromForm] PermitDTO permit)
         {
             var newPermit = await _permitService.AddPermit(permit);
-            return newPermit;
+            return Created("success", newPermit);
         }
 
         // PUT api/<PermitsController>/5
         [HttpPut("{id}")]
         [Authorize(Roles = "Administrator")]
-        public async Task<PermitDTO> Put(int id, [FromForm] PermitDTO permit)
+        public async Task<ActionResult<PermitDTO>> Put(int id, [FromForm] PermitDTO permit)
         {
             var updatedPermit = await _permitService.UpdatePermit(id, permit);
-            return updatedPermit;
+            if (updatedPermit == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(updatedPermit);
         }
 
         // DELETE api/<PermitsController>/5
         [HttpDelete("{id}")]
         [Authorize(Roles = "Administrator")]
-        public async Task Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
             await _permitService.DeletePermit(id);
+            return Ok();
         }
     }
 }

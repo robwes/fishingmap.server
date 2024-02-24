@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using AutoMapper;
+﻿using AutoMapper;
 using FishingMap.Common.Utils;
-using FishingMap.Domain.Interfaces;
-using FishingMap.Data.Interfaces;
 using FishingMap.Data.Entities;
+using FishingMap.Data.Interfaces;
 using FishingMap.Domain.DTO.Users;
+using FishingMap.Domain.Interfaces;
 
 namespace FishingMap.Domain.Services
 {
@@ -107,6 +103,20 @@ namespace FishingMap.Domain.Services
         public async Task<UserCredentials?> GetUserCredentials(int id)
         {
             var user = await _unitOfWork.Users.GetById(id, noTracking: true);
+            if (user != null)
+            {
+                return _mapper.Map<UserCredentials>(user);
+            }
+
+            return null;
+        }
+
+        public async Task<UserCredentials?> GetUserCredentialsByUserName(string username)
+        {
+            var user = await _unitOfWork.Users.Find(
+                                u => u.UserName == username,
+                                noTracking: true);
+
             if (user != null)
             {
                 return _mapper.Map<UserCredentials>(user);

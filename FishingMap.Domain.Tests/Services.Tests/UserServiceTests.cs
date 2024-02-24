@@ -250,6 +250,49 @@ namespace FishingMap.Domain.Tests.Services.Tests
         }
 
         [Fact]
+        public async Task GetUserCredentialsByUserName_ShouldReturnMappedUserCredentials_WhenUserExists()
+        {
+            // Arrange
+            var username = "testuser";
+            var user = new User { Id = 1, UserName = username, Password = "testpassword", Salt = "testsalt" };
+            var userCredentials = new UserCredentials { UserName = username, Password = "testpassword", Salt = "testsalt" };
+
+            _unitOfWorkMock.Setup(uow => uow.Users.Find(
+                It.IsAny<Expression<Func<User, bool>>>(),
+                It.IsAny<Expression<Func<User, object>>[]>(),
+                It.IsAny<bool>()
+            )).ReturnsAsync(user);
+
+            // Act
+            var result = await _userService.GetUserCredentialsByUserName(username);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(userCredentials.UserName, result.UserName);
+            Assert.Equal(userCredentials.Password, result.Password);
+            Assert.Equal(userCredentials.Salt, result.Salt);
+        }
+
+        [Fact]
+        public async Task GetUserCredentialsByUserName_ShouldReturnNull_WhenUserDoesNotExist()
+        {
+            // Arrange
+            var username = "testuser";
+
+            _unitOfWorkMock.Setup(uow => uow.Users.Find(
+                It.IsAny<Expression<Func<User, bool>>>(),
+                It.IsAny<Expression<Func<User, object>>[]>(),
+                It.IsAny<bool>()
+            )).ReturnsAsync((User?)null);
+
+            // Act
+            var result = await _userService.GetUserCredentialsByUserName(username);
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
         public async Task UpdateUserDetails_ShouldUpdateUserAndReturnMappedUser_WhenUserExists()
         {
             // Arrange

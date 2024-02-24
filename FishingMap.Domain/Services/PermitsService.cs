@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using AutoMapper;
+﻿using AutoMapper;
 using FishingMap.Data.Entities;
 using FishingMap.Data.Interfaces;
 using FishingMap.Domain.DTO.Permits;

@@ -1,6 +1,4 @@
-﻿using System.IO;
-
-public class ContentTypeStream : Stream
+﻿public class ContentTypeStream : Stream
 {
     private readonly Stream _stream;
 

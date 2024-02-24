@@ -1,18 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using System.IO;
+﻿using AutoMapper;
+using FishingMap.Common.Extensions;
+using FishingMap.Data.Entities;
+using FishingMap.Data.Interfaces;
+using FishingMap.Domain.DTO.Locations;
+using FishingMap.Domain.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using NetTopologySuite.Geometries;
-using AutoMapper;
-using FishingMap.Common.Extensions;
-using FishingMap.Domain.Interfaces;
-using FishingMap.Data.Interfaces;
-using FishingMap.Data.Entities;
 using Location = FishingMap.Data.Entities.Location;
-using FishingMap.Domain.DTO.Locations;
 
 namespace FishingMap.Domain.Services
 {
@@ -62,7 +57,13 @@ namespace FishingMap.Domain.Services
                 entity.Permits = (ICollection<Permit>)permits;
             }
 
-            entity.Geometry = _geometryFactory.GeoJsonFeatureToMultiPolygon(location.Geometry);
+            var geometry = _geometryFactory.GeoJsonFeatureToMultiPolygon(location.Geometry);
+            if (geometry == null)
+            {
+                throw new ArgumentException("Invalid geometry");
+            }
+
+            entity.Geometry = geometry;
             entity.Position = entity.Geometry.Centroid;
             entity.Area = entity.Geometry.Area;
 
@@ -155,12 +156,15 @@ namespace FishingMap.Domain.Services
                 entity.Rules = location.Rules;
                 entity.WebSite = location.WebSite;
 
-                if (!string.IsNullOrEmpty(location.Geometry)) {                     
-                    var multiPolygon = _geometryFactory.GeoJsonFeatureToMultiPolygon(location.Geometry);
-                    entity.Geometry = multiPolygon;
-                    entity.Position = entity.Geometry.Centroid;
-                    entity.Area = multiPolygon.Area;
+                var geometry = _geometryFactory.GeoJsonFeatureToMultiPolygon(location.Geometry);
+                if (geometry == null)
+                {
+                    throw new ArgumentException("Invalid geometry");
                 }
+                
+                entity.Geometry = geometry;
+                entity.Position = entity.Geometry.Centroid;
+                entity.Area = entity.Geometry.Area;
 
                 if (location.NavigationPosition != null)
                 {

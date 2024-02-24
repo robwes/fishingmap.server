@@ -19,44 +19,55 @@ namespace FishingMap.API.Controllers
         // GET: api/<controller>
         [HttpGet]
         [AllowAnonymous]
-        public async Task<IEnumerable<SpeciesDTO>> Get([FromQuery] string search = "")
+        public async Task<ActionResult<IEnumerable<SpeciesDTO>>> Get([FromQuery] string search = "")
         {
             var species = await _speciesService.GetSpecies(search);
-            return species;
+            return Ok(species);
         }
 
         // GET api/<controller>/5
         [HttpGet("{id}")]
-        public async Task<SpeciesDTO> Get(int id)
+        public async Task<ActionResult<SpeciesDTO>> Get(int id)
         {
             var species = await _speciesService.GetSpeciesById(id);
-            return species;
+            if (species == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(species);
         }
 
         // POST api/<controller>
         [HttpPost]
         [Authorize(Roles = "Administrator")]
-        public async Task<SpeciesDTO> Post([FromForm]SpeciesAdd species)
+        public async Task<ActionResult<SpeciesDTO>> Post([FromForm]SpeciesAdd species)
         {
-            var sp = await _speciesService.AddSpecies(species);
-            return sp;
+            var addedSpecies = await _speciesService.AddSpecies(species);
+            return Created("success", addedSpecies);
         }
 
         // PUT api/<controller>/5
         [HttpPut("{id}")]
         [Authorize(Roles = "Administrator")]
-        public async Task<SpeciesDTO> Put(int id, [FromForm]SpeciesUpdate species)
+        public async Task<ActionResult<SpeciesDTO>> Put(int id, [FromForm]SpeciesUpdate species)
         {
-            var sp = await _speciesService.UpdateSpecies(id, species);
-            return sp;
+            var updatedSpecies = await _speciesService.UpdateSpecies(id, species);
+            if (updatedSpecies == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(updatedSpecies);
         }
 
         // DELETE: api/ApiWithActions/5
         [HttpDelete("{id}")]
         [Authorize(Roles = "Administrator")]
-        public async Task Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
             await _speciesService.DeleteSpecies(id);
+            return Ok();
         }
     }
 }

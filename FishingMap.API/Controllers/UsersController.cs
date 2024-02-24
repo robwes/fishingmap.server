@@ -21,7 +21,7 @@ namespace FishingMap.API.Controllers
 
         [HttpPut("{id}/details")]
         [Authorize(Roles = "Administrator")]
-        public async Task<IActionResult> UpdateUserDetails(int id, [FromForm]UserDetailsUpdate userDetails)
+        public async Task<ActionResult<UserDTO>> UpdateUserDetails(int id, [FromForm]UserDetailsUpdate userDetails)
         {
             var currentUser = await _authService.GetCurrentUser(HttpContext);
             if (currentUser == null || currentUser.Id != id)
@@ -45,7 +45,7 @@ namespace FishingMap.API.Controllers
             }
 
             var userCredentials = await _userService.GetUserCredentials(currentUser.Id);
-            if (!_authService.ValidateUserPassword(userCredentials, userPasswordUpdate.CurrentPassword))
+            if (!_authService.ValidateUserPassword(userCredentials!, userPasswordUpdate.CurrentPassword))
             {
                 return Unauthorized();
             }
@@ -61,7 +61,7 @@ namespace FishingMap.API.Controllers
 
         [HttpPost("registerUser")]
         [Authorize(Roles = "Administrator")]
-        public async Task<IActionResult> RegisterUser([FromBody]UserAdd user)
+        public async Task<ActionResult<UserDTO>> RegisterUser([FromBody]UserAdd user)
         {
             var newUser = await _userService.AddUser(user);
             return Created("success", newUser);
