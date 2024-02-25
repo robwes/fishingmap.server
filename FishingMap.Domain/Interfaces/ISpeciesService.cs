@@ -7,7 +7,7 @@ namespace FishingMap.Domain.Interfaces
         Task<SpeciesDTO> AddSpecies(SpeciesAdd species);
         Task DeleteSpecies(int id);
         Task<IEnumerable<SpeciesDTO>> GetSpecies(string search = "");
-        Task<SpeciesDTO> GetSpeciesById(int id);
+        Task<SpeciesDTO?> GetSpeciesById(int id);
         Task<SpeciesDTO> UpdateSpecies(int id, SpeciesUpdate species);
     }
 }
