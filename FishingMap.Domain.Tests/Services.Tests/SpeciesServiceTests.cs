@@ -1,15 +1,14 @@
 ﻿using AutoMapper;
 using FishingMap.Data.Entities;
 using FishingMap.Data.Interfaces;
-using FishingMap.Domain.Interfaces;
-using Microsoft.AspNetCore.Http;
-using FishingMap.Domain.DTO.Species;
-using Moq;
-using FishingMap.Domain.Services;
-using FishingMap.Domain.DTO.Images;
-using Microsoft.AspNetCore.Http.Internal;
-using System.Text;
 using FishingMap.Domain.AutoMapperProfiles;
+using FishingMap.Domain.DTO.Species;
+using FishingMap.Domain.Interfaces;
+using FishingMap.Domain.Services;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Internal;
+using Moq;
+using System.Text;
 
 namespace FishingMap.Domain.Tests.Services.Tests
 {
@@ -89,27 +88,16 @@ namespace FishingMap.Domain.Tests.Services.Tests
         }
 
         [Fact]
-        public async Task AddSpecies_ShouldReturnNull_WhenSpeciesExists()
+        public async Task AddSpecies_ShouldThrowArgumentException_WhenSpeciesNameAlreadyExists()
         {
             // Arrange
-            var speciesAdd = new SpeciesAdd
-            {
-                Name = "Test Species",
-                Description = "Test Description",
-                Images = new List<IFormFile>()
-            };
+            var speciesDto = new SpeciesAdd { Name = "Test", Description = "Test Description" };
+            _unitOfWorkMock.Setup(u => u.Species.Any(s => s.Name == speciesDto.Name)).ReturnsAsync(true);
 
-            _unitOfWorkMock.Setup(u => u.Species.Any(s => s.Name == speciesAdd.Name))
-                .ReturnsAsync(true);
-
-            // Act
-            var result = await _speciesService.AddSpecies(speciesAdd);
-
-            // Assert
-            Assert.Null(result);
-            _unitOfWorkMock.Verify(u => u.Species.Add(It.IsAny<Species>()), Times.Never);
-            _unitOfWorkMock.Verify(u => u.SaveChanges(), Times.Never);
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() => _speciesService.AddSpecies(speciesDto));
         }
+
 
         [Fact]
         public async Task DeleteSpecies_ShouldDeleteSpecies_WhenSpeciesExists()
@@ -288,26 +276,17 @@ namespace FishingMap.Domain.Tests.Services.Tests
         }
 
         [Fact]
-        public async Task UpdateSpecies_ShouldReturnNull_WhenSpeciesIsNotFound()
+        public async Task UpdateSpecies_ShouldThrowKeyNotFoundException_WhenSpeciesDoesNotExist()
         {
             // Arrange
-            var speciesId = 1;
-            var speciesUpdate = new SpeciesUpdate
-            {
-                Name = "Updated Species",
-                Description = "Updated Description",
-                Images = new List<IFormFile> { new FormFile(new MemoryStream(), 0, 0, "Data", "image.jpg") }
-            };
+            var id = 1;
+            var speciesDto = new SpeciesUpdate { Name = "Test", Description = "Test Description" };
+            _unitOfWorkMock.Setup(u => u.Species.GetSpeciesWithImages(id, false)).ReturnsAsync((Species?)null);
 
-            _unitOfWorkMock.Setup(u => u.Species.GetSpeciesWithImages(speciesId, false))
-                .ReturnsAsync((Species?)null);
-
-            // Act
-            var result = await _speciesService.UpdateSpecies(speciesId, speciesUpdate);
-
-            // Assert
-            Assert.Null(result);
+            // Act & Assert
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _speciesService.UpdateSpecies(id, speciesDto));
         }
+
 
         [Fact]
         public async Task UpdateSpecies_ShouldDeleteImage_WhenImageIsNotIncludedInUpdate()

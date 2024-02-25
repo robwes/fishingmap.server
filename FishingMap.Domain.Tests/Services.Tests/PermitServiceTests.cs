@@ -12,7 +12,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
     {
         private Mock<IUnitOfWork> _unitOfWorkMock;
         private IMapper _mapper;
-        private PermitsService _service;
+        private PermitsService _permitService;
 
         public PermitServiceTests()
         {
@@ -23,7 +23,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
                 cfg.AddProfile<DomainProfile>();
             }).CreateMapper();
 
-            _service = new PermitsService(_unitOfWorkMock.Object, _mapper);
+            _permitService = new PermitsService(_unitOfWorkMock.Object, _mapper);
         }
 
         [Fact]
@@ -35,7 +35,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
             _unitOfWorkMock.Setup(u => u.Permits.Add(It.IsAny<Permit>())).Returns(permit);
 
             // Act
-            var result = await _service.AddPermit(permitDto);
+            var result = await _permitService.AddPermit(permitDto);
 
             // Assert
             Assert.NotNull(result);
@@ -53,7 +53,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
             _unitOfWorkMock.Setup(u => u.Permits.Add(It.IsAny<Permit>())).Throws<Exception>();
 
             // Act & Assert
-            await Assert.ThrowsAsync<Exception>(() => _service.AddPermit(permitDto));
+            await Assert.ThrowsAsync<Exception>(() => _permitService.AddPermit(permitDto));
         }
 
         [Fact]
@@ -65,7 +65,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
             _unitOfWorkMock.Setup(u => u.Permits.Add(It.IsAny<Permit>())).Returns(permit);
 
             // Act
-            var result = await _service.AddPermit(permitDto);
+            var result = await _permitService.AddPermit(permitDto);
 
             // Assert
             Assert.Equal(permitDto.Name, result.Name);
@@ -80,7 +80,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
             _unitOfWorkMock.Setup(u => u.Permits.Delete(id)).Returns(Task.CompletedTask);
 
             // Act
-            await _service.DeletePermit(id);
+            await _permitService.DeletePermit(id);
 
             // Assert
             _unitOfWorkMock.Verify(u => u.Permits.Delete(id), Times.Once);
@@ -95,7 +95,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
             _unitOfWorkMock.Setup(u => u.Permits.Delete(id)).Throws<Exception>();
 
             // Act & Assert
-            await Assert.ThrowsAsync<Exception>(() => _service.DeletePermit(id));
+            await Assert.ThrowsAsync<Exception>(() => _permitService.DeletePermit(id));
         }
 
         [Fact]
@@ -107,7 +107,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
             _unitOfWorkMock.Setup(u => u.Permits.GetById(id, null, true)).ReturnsAsync(permit);
 
             // Act
-            var result = await _service.GetPermit(id);
+            var result = await _permitService.GetPermit(id);
 
             // Assert
             Assert.NotNull(result);
@@ -123,7 +123,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
             _unitOfWorkMock.Setup(u => u.Permits.GetById(id, null, true)).ReturnsAsync((Permit?)null);
 
             // Act
-            var result = await _service.GetPermit(id);
+            var result = await _permitService.GetPermit(id);
 
             // Assert
             Assert.Null(result);
@@ -137,7 +137,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
             _unitOfWorkMock.Setup(u => u.Permits.GetById(id, null, true)).Throws<Exception>();
 
             // Act & Assert
-            await Assert.ThrowsAsync<Exception>(() => _service.GetPermit(id));
+            await Assert.ThrowsAsync<Exception>(() => _permitService.GetPermit(id));
         }
 
         [Fact]
@@ -149,7 +149,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
             _unitOfWorkMock.Setup(u => u.Permits.FindPermits(search)).ReturnsAsync(permits);
 
             // Act
-            var result = await _service.GetPermits(search);
+            var result = await _permitService.GetPermits(search);
 
             // Assert
             Assert.NotNull(result);
@@ -166,7 +166,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
             _unitOfWorkMock.Setup(u => u.Permits.FindPermits(search)).ReturnsAsync(new List<Permit>());
 
             // Act
-            var result = await _service.GetPermits(search);
+            var result = await _permitService.GetPermits(search);
 
             // Assert
             Assert.Empty(result);
@@ -180,7 +180,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
             _unitOfWorkMock.Setup(u => u.Permits.FindPermits(search)).Throws<Exception>();
 
             // Act & Assert
-            await Assert.ThrowsAsync<Exception>(() => _service.GetPermits(search));
+            await Assert.ThrowsAsync<Exception>(() => _permitService.GetPermits(search));
         }
 
         [Fact]
@@ -194,7 +194,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
             _unitOfWorkMock.Setup(u => u.Permits.GetById(id, null, false)).ReturnsAsync(permit);
 
             // Act
-            var result = await _service.UpdatePermit(id, permitDto);
+            var result = await _permitService.UpdatePermit(id, permitDto);
 
             // Assert
             Assert.NotNull(result);
@@ -204,18 +204,15 @@ namespace FishingMap.Domain.Tests.Services.Tests
         }
 
         [Fact]
-        public async Task UpdatePermit_ShouldReturnNull_WhenPermitDoesNotExist()
+        public async Task UpdatePermit_ShouldThrowKeyNotFoundException_WhenPermitDoesNotExist()
         {
             // Arrange
             var id = 1;
             var permitDto = new PermitDTO { Name = "Test", Url = "http://test.com" };
             _unitOfWorkMock.Setup(u => u.Permits.GetById(id, null, false)).ReturnsAsync((Permit?)null);
 
-            // Act
-            var result = await _service.UpdatePermit(id, permitDto);
-
-            // Assert
-            Assert.Null(result);
+            // Act & Assert
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _permitService.UpdatePermit(id, permitDto));
         }
 
         [Fact]
@@ -227,7 +224,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
             _unitOfWorkMock.Setup(u => u.Permits.GetById(id, null, false)).Throws<Exception>();
 
             // Act & Assert
-            await Assert.ThrowsAsync<Exception>(() => _service.UpdatePermit(id, permitDto));
+            await Assert.ThrowsAsync<Exception>(() => _permitService.UpdatePermit(id, permitDto));
         }
     }
 }

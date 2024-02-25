@@ -135,22 +135,22 @@ namespace FishingMap.Domain.Services
             return _mapper.Map<IEnumerable<UserDTO>>(users);
         }
 
-        public async Task<UserDTO?> UpdateUserDetails(int id, UserDetailsUpdate user)
+        public async Task<UserDTO> UpdateUserDetails(int id, UserDetailsUpdate user)
         {
             var userEntity = await _unitOfWork.Users.GetById(id);
-            if (userEntity != null)
+            if (userEntity == null)
             {
-                userEntity.FirstName = user.FirstName;
-                userEntity.LastName = user.LastName;
-                userEntity.Email = user.Email;
-                userEntity.Modified = DateTime.Now;
-
-                await _unitOfWork.SaveChanges();
-
-                return _mapper.Map<UserDTO>(userEntity);
+                throw new KeyNotFoundException($"User with id {id} not found.");
             }
 
-            return null;
+            userEntity.FirstName = user.FirstName;
+            userEntity.LastName = user.LastName;
+            userEntity.Email = user.Email;
+            userEntity.Modified = DateTime.Now;
+
+            await _unitOfWork.SaveChanges();
+
+            return _mapper.Map<UserDTO>(userEntity);
         }
 
         public async Task<bool> UpdateUserPassword(int id, string password)

@@ -10,6 +10,6 @@ namespace FishingMap.Domain.Interfaces
         Task<IEnumerable<LocationSummary>> GetLocations(string search = "", List<int>? speciesIds = null, double? radius = null, double? orgLat = null, double? orgLng = null);
         Task<IEnumerable<LocationSummary>> GetLocationsSummary(string search = "", List<int>? speciesIds = null, double? radius = null, double? orgLat = null, double? orgLng = null);
         Task<IEnumerable<LocationMarker>> GetMarkers(string search = "", List<int>? speciesIds = null, double? radius = null, double? orgLat = null, double? orgLng = null);
-        Task<LocationDTO?> UpdateLocation(int id, LocationUpdate location);
+        Task<LocationDTO> UpdateLocation(int id, LocationUpdate location);
     }
 }

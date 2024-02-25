@@ -196,18 +196,15 @@ namespace FishingMap.Domain.Tests.Services.Tests
         }
 
         [Fact]
-        public async Task UpdateLocation_LocationDoesNotExist_ReturnsNull()
+        public async Task UpdateLocation_ShouldThrowKeyNotFoundException_WhenLocationDoesNotExist()
         {
             // Arrange
-            var locationId = 1;
-            var locationUpdate = new LocationUpdate();
-            _unitOfWorkMock.Setup(u => u.Locations.GetLocationWithDetails(locationId, false)).ReturnsAsync((Location?)null);
+            var id = 1;
+            var locationDto = new LocationUpdate { Name = "Test", Description = "Test Description" };
+            _unitOfWorkMock.Setup(u => u.Locations.GetLocationWithDetails(id, false)).ReturnsAsync((Location?)null);
 
-            // Act
-            var result = await _locationService.UpdateLocation(locationId, locationUpdate);
-
-            // Assert
-            Assert.Null(result);
+            // Act & Assert
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _locationService.UpdateLocation(id, locationDto));
         }
 
         [Fact]

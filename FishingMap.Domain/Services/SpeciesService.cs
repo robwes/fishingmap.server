@@ -24,7 +24,7 @@ namespace FishingMap.Domain.Services
             _mapper = mapper;
         }
 
-        public async Task<SpeciesDTO?> AddSpecies(SpeciesAdd species)
+        public async Task<SpeciesDTO> AddSpecies(SpeciesAdd species)
         {
             var entity = new Species
             {
@@ -34,25 +34,25 @@ namespace FishingMap.Domain.Services
                 Modified = DateTime.Now
             };
 
-            if (!await _unitOfWork.Species.Any(s => s.Name == species.Name))
+            if (await _unitOfWork.Species.Any(s => s.Name == species.Name))
             {
-                entity = _unitOfWork.Species.Add(entity);
-                await _unitOfWork.SaveChanges();
-
-                if (species.Images?.Count > 0)
-                {
-                    entity.Images = new List<Image>();
-                    foreach (var image in species.Images)
-                    {
-                        await AddSpeciesImage(entity, image);
-                    }
-                    await _unitOfWork.SaveChanges();
-                }
-
-                return _mapper.Map<SpeciesDTO>(entity);
+                throw new ArgumentException($"A species with the name {species.Name} already exists.");
             }
 
-            return null;
+            entity = _unitOfWork.Species.Add(entity);
+            await _unitOfWork.SaveChanges();
+
+            if (species.Images?.Count > 0)
+            {
+                entity.Images = new List<Image>();
+                foreach (var image in species.Images)
+                {
+                    await AddSpeciesImage(entity, image);
+                }
+                await _unitOfWork.SaveChanges();
+            }
+
+            return _mapper.Map<SpeciesDTO>(entity);
         }
 
         public async Task DeleteSpecies(int id)
@@ -89,24 +89,23 @@ namespace FishingMap.Domain.Services
             return null;
         }
 
-        public async Task<SpeciesDTO?> UpdateSpecies(int id, SpeciesUpdate species)
+        public async Task<SpeciesDTO> UpdateSpecies(int id, SpeciesUpdate species)
         {
             var entity = await _unitOfWork.Species.GetSpeciesWithImages(id);
-
-            if (entity != null)
+            if (entity == null)
             {
-                entity.Name = species.Name;
-                entity.Description = species.Description;
-
-                await UpdateSpeciesImages(entity, species);
-                entity.Modified = DateTime.Now;
-
-                await _unitOfWork.SaveChanges();
-
-                return _mapper.Map<SpeciesDTO>(entity);
+                throw new KeyNotFoundException($"Species with id {id} not found.");
             }
 
-            return null;
+            entity.Name = species.Name;
+            entity.Description = species.Description;
+
+            await UpdateSpeciesImages(entity, species);
+            entity.Modified = DateTime.Now;
+
+            await _unitOfWork.SaveChanges();
+
+            return _mapper.Map<SpeciesDTO>(entity);
         }
 
         private async Task AddSpeciesImage(Species species, IFormFile image)

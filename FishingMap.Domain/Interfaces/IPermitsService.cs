@@ -8,6 +8,6 @@ namespace FishingMap.Domain.Interfaces
         Task DeletePermit(int id);
         Task<PermitDTO?> GetPermit(int id);
         Task<IEnumerable<PermitDTO>> GetPermits(string search);
-        Task<PermitDTO?> UpdatePermit(int id, PermitDTO permit);
+        Task<PermitDTO> UpdatePermit(int id, PermitDTO permit);
     }
 }

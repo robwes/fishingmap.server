@@ -13,7 +13,7 @@ namespace FishingMap.Domain.Interfaces
         Task<UserCredentials?> GetUserCredentials(int id);
         Task<UserCredentials?> GetUserCredentialsByUserName(string username);
         Task<IEnumerable<UserDTO>> GetUsers();
-        Task<UserDTO?> UpdateUserDetails(int id, UserDetailsUpdate user);
+        Task<UserDTO> UpdateUserDetails(int id, UserDetailsUpdate user);
         Task<bool> UpdateUserPassword(int id, string password);
 
     }

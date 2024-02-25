@@ -22,21 +22,35 @@ namespace FishingMap.API.Controllers
         [HttpGet]
         public async Task<ActionResult<PermitDTO>> Get([FromQuery] string search = "")
         {
-            var permits = await _permitService.GetPermits(search);
-            return Ok(permits);
+            try
+            {
+                var permits = await _permitService.GetPermits(search);
+                return Ok(permits);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "An error occurred while processing your request.");
+            }
         }
 
         // GET api/<PermitsController>/5
         [HttpGet("{id}")]
         public async Task<ActionResult<PermitDTO>> Get(int id)
         {
-            var permit = await _permitService.GetPermit(id);
-            if (permit == null)
+            try
             {
-                return NotFound();
-            }
+                var permit = await _permitService.GetPermit(id);
+                if (permit == null)
+                {
+                    return NotFound();
+                }
 
-            return Ok(permit);
+                return Ok(permit);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "An error occurred while processing your request.");
+            }
         }
 
         // POST api/<PermitsController>
@@ -44,8 +58,15 @@ namespace FishingMap.API.Controllers
         [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<PermitDTO>> Post([FromForm] PermitDTO permit)
         {
-            var newPermit = await _permitService.AddPermit(permit);
-            return Created("success", newPermit);
+            try
+            {
+                var newPermit = await _permitService.AddPermit(permit);
+                return CreatedAtAction(nameof(Get), new { id = newPermit.Id }, newPermit);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "An error occurred while processing your request.");
+            }
         }
 
         // PUT api/<PermitsController>/5
@@ -53,13 +74,19 @@ namespace FishingMap.API.Controllers
         [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<PermitDTO>> Put(int id, [FromForm] PermitDTO permit)
         {
-            var updatedPermit = await _permitService.UpdatePermit(id, permit);
-            if (updatedPermit == null)
+            try
+            {
+                var updatedPermit = await _permitService.UpdatePermit(id, permit);
+                return Ok(updatedPermit);
+            }
+            catch (KeyNotFoundException)
             {
                 return NotFound();
             }
-
-            return Ok(updatedPermit);
+            catch (Exception)
+            {
+                return StatusCode(500, "An error occurred while processing your request.");
+            }
         }
 
         // DELETE api/<PermitsController>/5
@@ -67,8 +94,15 @@ namespace FishingMap.API.Controllers
         [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> Delete(int id)
         {
-            await _permitService.DeletePermit(id);
-            return Ok();
+            try
+            {
+                await _permitService.DeletePermit(id);
+                return Ok();
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "An error occurred while processing your request.");
+            }
         }
     }
 }

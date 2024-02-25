@@ -57,21 +57,21 @@ namespace FishingMap.Domain.Services
             return _mapper.Map<IEnumerable<PermitDTO>>(permits);
         }
 
-        public async Task<PermitDTO?> UpdatePermit(int id, PermitDTO permit)
+        public async Task<PermitDTO> UpdatePermit(int id, PermitDTO permit)
         {
             var entity = await _unitOfWork.Permits.GetById(id);
-            if (entity != null)
+            if (entity == null)
             {
-                entity.Name = permit.Name;
-                entity.Url = permit.Url;
-                entity.Modified = DateTime.Now;
-
-                await _unitOfWork.SaveChanges();
-
-                return _mapper.Map<PermitDTO>(entity);
+                throw new KeyNotFoundException($"Permit with id {id} not found.");
             }
 
-            return null;
+            entity.Name = permit.Name;
+            entity.Url = permit.Url;
+            entity.Modified = DateTime.Now;
+
+            await _unitOfWork.SaveChanges();
+
+            return _mapper.Map<PermitDTO>(entity);
         }
     }
 }

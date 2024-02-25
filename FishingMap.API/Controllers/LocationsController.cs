@@ -20,35 +20,63 @@ namespace FishingMap.API.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<LocationSummary>>> Get([FromQuery] string search = "", [FromQuery] List<int>? sIds = null, [FromQuery] double? radius = null, [FromQuery] double? orgLat = null, [FromQuery] double? orgLng = null)
         {
-            var locations = await _locationService.GetLocations(search, sIds, radius, orgLat, orgLng);
-            return Ok(locations);
+            try
+            {
+                var locations = await _locationService.GetLocations(search, sIds, radius, orgLat, orgLng);
+                return Ok(locations);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "An error occurred while processing your request.");
+            }
         }
 
         [HttpGet("markers")]
         public async Task<ActionResult<IEnumerable<LocationMarker>>> Markers([FromQuery] string search = "", [FromQuery] List<int>? sIds = null, [FromQuery] double? radius = null, [FromQuery] double? orgLat = null, [FromQuery] double? orgLng = null)
         {
-            var markers = await _locationService.GetMarkers(search, sIds, radius, orgLat, orgLng);
-            return Ok(markers);
+            try
+            {
+                var markers = await _locationService.GetMarkers(search, sIds, radius, orgLat, orgLng);
+                return Ok(markers);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "An error occurred while processing your request.");
+            }
         }
 
         [HttpGet("summary")]
         public async Task<ActionResult<IEnumerable<LocationSummary>>> LocationsSummary([FromQuery] string search = "", [FromQuery] List<int>? sIds = null, [FromQuery] double? radius = null, [FromQuery] double? orgLat = null, [FromQuery] double? orgLng = null)
         {
-            var locations = await _locationService.GetLocationsSummary(search, sIds, radius, orgLat, orgLng);
-            return Ok(locations);
+            try
+            {
+                var locations = await _locationService.GetLocationsSummary(search, sIds, radius, orgLat, orgLng);
+                return Ok(locations);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "An error occurred while processing your request.");
+            }
         }
 
         // GET api/<controller>/5
         [HttpGet("{id}")]
         public async Task<ActionResult<LocationDTO>> Get(int id)
         {
-            var location = await _locationService.GetLocation(id);
-            if (location == null)
+            try
             {
-                return NotFound();
-            }
+                var location = await _locationService.GetLocation(id);
+                if (location == null)
+                {
+                    return NotFound();
+                }
 
-            return Ok(location);
+                return Ok(location);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "An error occurred while processing your request.");
+            }
         }
 
         // POST api/<controller>
@@ -59,7 +87,7 @@ namespace FishingMap.API.Controllers
             try
             {
                 var loc = await _locationService.AddLocation(location);
-                return Created("success", loc);
+                return CreatedAtAction(nameof(Get), new { id = loc.Id }, loc);
             }
             catch (ArgumentException ex)
             {
@@ -79,12 +107,11 @@ namespace FishingMap.API.Controllers
             try
             {
                 var loc = await _locationService.UpdateLocation(id, location);
-                if (loc == null)
-                {
-                    return NotFound();
-                }
-
                 return Ok(loc);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
             }
             catch (ArgumentException ex)
             {
@@ -101,8 +128,15 @@ namespace FishingMap.API.Controllers
         [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> Delete(int id)
         {
-            await _locationService.DeleteLocation(id);
-            return Ok();
+            try
+            {
+                await _locationService.DeleteLocation(id);
+                return Ok();
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "An error occurred while processing your request.");
+            }
         }
     }
 }

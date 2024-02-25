@@ -23,56 +23,91 @@ namespace FishingMap.API.Controllers
         [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<UserDTO>> UpdateUserDetails(int id, [FromForm]UserDetailsUpdate userDetails)
         {
-            var currentUser = await _authService.GetCurrentUser(HttpContext);
-            if (currentUser == null || currentUser.Id != id)
+            try
             {
-                return Unauthorized();
-            }
+                var currentUser = await _authService.GetCurrentUser(HttpContext);
+                if (currentUser == null || currentUser.Id != id)
+                {
+                    return Unauthorized();
+                }
 
-            var updatedUser = await _userService.UpdateUserDetails(currentUser.Id, userDetails);
-            
-            return Ok(updatedUser);
+                var updatedUser = await _userService.UpdateUserDetails(currentUser.Id, userDetails);
+                return Ok(updatedUser);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "An error occurred while processing your request.");
+            }
         }
 
         [HttpPut("{id}/password")]
         [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> updateUserPassword(int id, [FromForm]UserPasswordUpdate userPasswordUpdate)
         {
-            var currentUser = await _authService.GetCurrentUser(HttpContext);
-            if (currentUser == null || currentUser.Id != id) 
-            {
-                return Unauthorized();
-            }
+            try {                 
+                var currentUser = await _authService.GetCurrentUser(HttpContext);
+                if (currentUser == null || currentUser.Id != id)
+                {
+                    return Unauthorized();
+                }
 
-            var userCredentials = await _userService.GetUserCredentials(currentUser.Id);
-            if (!_authService.ValidateUserPassword(userCredentials!, userPasswordUpdate.CurrentPassword))
-            {
-                return Unauthorized();
-            }
+                var userCredentials = await _userService.GetUserCredentials(currentUser.Id);
+                if (userCredentials == null)
+                {
+                    return NotFound();
+                }
 
-            var passwordUpdated = await _userService.UpdateUserPassword(currentUser.Id, userPasswordUpdate.NewPassword);
-            if (!passwordUpdated)
-            {
-                return BadRequest();
-            }
+                if (!_authService.ValidateUserPassword(userCredentials, userPasswordUpdate.CurrentPassword))
+                {
+                    return Unauthorized();
+                }
 
-            return Ok();
+                var passwordUpdated = await _userService.UpdateUserPassword(currentUser.Id, userPasswordUpdate.NewPassword);
+                if (!passwordUpdated)
+                {
+                    return BadRequest();
+                }
+
+                return Ok();
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "An error occurred while processing your request.");
+            }
         }
 
         [HttpPost("registerUser")]
         [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<UserDTO>> RegisterUser([FromBody]UserAdd user)
         {
-            var newUser = await _userService.AddUser(user);
-            return Created("success", newUser);
+            try
+            {
+                var newUser = await _userService.AddUser(user);
+                return Created("", newUser);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "An error occurred while processing your request.");
+            }
         }
 
         [HttpPost("registerAdmin")]
         [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> RegisterAdmin([FromBody] UserAdd admin)
         {
-            var newAdmin = await _userService.AddAdministrator(admin);
-            return Created("success", newAdmin);
+            try
+            {
+                var newAdmin = await _userService.AddAdministrator(admin);
+                return Created("", newAdmin);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "An error occurred while processing your request.");
+            }
         }
     }
 }

@@ -32,61 +32,82 @@ namespace FishingMap.API.Controllers
         [HttpPost("login")]
         public async Task<ActionResult<UserDTO>> Login([FromBody]UserLogin userLogin)
         {
-            var user = await _userService.GetUserByUsername(userLogin.UserName);
-            if (user == null)
+            try
             {
-                return NotFound();
+                var user = await _userService.GetUserByUsername(userLogin.UserName);
+                if (user == null)
+                {
+                    return NotFound();
+                }
+
+                var userCredentials = await _userService.GetUserCredentialsByUserName(userLogin.UserName);
+                if (userCredentials == null)
+                {
+                    return NotFound();
+                }
+
+                if (!_authService.ValidateUserPassword(userCredentials, userLogin.Password))
+                {
+                    return BadRequest(new { message = "Invalid credentials" });
+                }
+
+                var jwtToken = _authService.GenerateToken(user);
+                Response.Cookies.Append("token", jwtToken, new CookieOptions
+                {
+                    HttpOnly = true,
+                    SameSite = SameSiteMode.None,
+                    Secure = true
+                });
+
+                return Ok(user);
             }
-
-            var userCredentials = await _userService.GetUserCredentialsByUserName(userLogin.UserName);
-            if (userCredentials == null)
+            catch (Exception)
             {
-                return NotFound();
+                return StatusCode(500, "An error occurred while processing your request.");
             }
-
-            if (!_authService.ValidateUserPassword(userCredentials, userLogin.Password))
-            {
-                return BadRequest(new { message = "Invalid credentials" });
-            }
-
-            var jwtToken = _authService.GenerateToken(user);
-            Response.Cookies.Append("token", jwtToken, new CookieOptions
-            {
-                HttpOnly = true,
-                SameSite = SameSiteMode.None,
-                Secure = true
-            });
-
-            return Ok(user);
         }
 
         [HttpPost("logout")]
         public IActionResult Logout()
         {
-            Response.Cookies.Delete("token", new CookieOptions
+            try
             {
-                HttpOnly = true,
-                SameSite = SameSiteMode.None,
-                Secure = true
-            });
-            return Ok();
+                Response.Cookies.Delete("token", new CookieOptions
+                {
+                    HttpOnly = true,
+                    SameSite = SameSiteMode.None,
+                    Secure = true
+                });
+                return Ok();
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "An error occurred while processing your request.");
+            }
         }
 
         [HttpGet("whoami")]
         [Authorize]
         public async Task<ActionResult<UserDTO>> WhoAmI()
         {
-            var currentUserIdentity = GetCurrentUserIdentity();
-            if (currentUserIdentity != null && currentUserIdentity.Username != null)
+            try
             {
-                var currentUser = await _userService.GetUserByUsername(currentUserIdentity.Username);
-                if (currentUser != null)
+                var currentUserIdentity = GetCurrentUserIdentity();
+                if (currentUserIdentity != null && currentUserIdentity.Username != null)
                 {
-                    return Ok(currentUser);
+                    var currentUser = await _userService.GetUserByUsername(currentUserIdentity.Username);
+                    if (currentUser != null)
+                    {
+                        return Ok(currentUser);
+                    }
                 }
-            }
 
-            return Unauthorized();
+                return Unauthorized();
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "An error occurred while processing your request.");
+            }
         }
 
         private UserModel? GetCurrentUserIdentity()

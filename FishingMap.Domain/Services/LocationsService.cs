@@ -145,70 +145,69 @@ namespace FishingMap.Domain.Services
             return _mapper.Map<IEnumerable<Location>, IEnumerable<LocationSummary>>(locations);
         }
 
-        public async Task<LocationDTO?> UpdateLocation(int id, LocationUpdate location)
+        public async Task<LocationDTO> UpdateLocation(int id, LocationUpdate location)
         {
             var entity = await _unitOfWork.Locations.GetLocationWithDetails(id);
-            
-            if (entity != null)
+            if (entity == null)
             {
-                entity.Name = location.Name;
-                entity.Description = location.Description;
-                entity.Rules = location.Rules;
-                entity.WebSite = location.WebSite;
-
-                var geometry = _geometryFactory.GeoJsonFeatureToMultiPolygon(location.Geometry);
-                if (geometry == null)
-                {
-                    throw new ArgumentException("Invalid geometry");
-                }
-                
-                entity.Geometry = geometry;
-                entity.Position = entity.Geometry.Centroid;
-                entity.Area = entity.Geometry.Area;
-
-                if (location.NavigationPosition != null)
-                {
-                    entity.NavigationPosition = _geometryFactory.CreatePoint(
-                        location.NavigationPosition.Longitude,
-                        location.NavigationPosition.Latitude
-                    );
-                }
-                else
-                {
-                    entity.NavigationPosition = null;
-                }
-
-                if (location.Species != null)
-                {
-                    var sIds = location.Species.Select(s => s.Id).Distinct();
-                    var species = await _unitOfWork.Species.GetAll(s => sIds.Contains(s.Id));
-                    entity.Species = (ICollection<Species>)species;
-                }
-                else
-                {
-                    entity.Species?.Clear();
-                }
-
-                if (location.Permits != null)
-                {
-                    var pIds = location.Permits.Select(s => s.Id).Distinct();
-                    var permits = await _unitOfWork.Permits.GetAll(p => pIds.Contains(p.Id));
-                    entity.Permits = (ICollection<Permit>)permits;
-                }
-                else
-                {
-                    entity.Permits?.Clear();
-                }
-
-                await UpdateLocationsImages(entity, location);
-
-                entity.Modified = DateTime.Now;
-                await _unitOfWork.SaveChanges();
-
-                return _mapper.Map<Location, LocationDTO>(entity);
+                throw new KeyNotFoundException($"Location with id {id} not found.");
             }
 
-            return null;
+            entity.Name = location.Name;
+            entity.Description = location.Description;
+            entity.Rules = location.Rules;
+            entity.WebSite = location.WebSite;
+
+            var geometry = _geometryFactory.GeoJsonFeatureToMultiPolygon(location.Geometry);
+            if (geometry == null)
+            {
+                throw new ArgumentException("Invalid geometry");
+            }
+                
+            entity.Geometry = geometry;
+            entity.Position = entity.Geometry.Centroid;
+            entity.Area = entity.Geometry.Area;
+
+            if (location.NavigationPosition != null)
+            {
+                entity.NavigationPosition = _geometryFactory.CreatePoint(
+                    location.NavigationPosition.Longitude,
+                    location.NavigationPosition.Latitude
+                );
+            }
+            else
+            {
+                entity.NavigationPosition = null;
+            }
+
+            if (location.Species != null)
+            {
+                var sIds = location.Species.Select(s => s.Id).Distinct();
+                var species = await _unitOfWork.Species.GetAll(s => sIds.Contains(s.Id));
+                entity.Species = (ICollection<Species>)species;
+            }
+            else
+            {
+                entity.Species?.Clear();
+            }
+
+            if (location.Permits != null)
+            {
+                var pIds = location.Permits.Select(s => s.Id).Distinct();
+                var permits = await _unitOfWork.Permits.GetAll(p => pIds.Contains(p.Id));
+                entity.Permits = (ICollection<Permit>)permits;
+            }
+            else
+            {
+                entity.Permits?.Clear();
+            }
+
+            await UpdateLocationsImages(entity, location);
+
+            entity.Modified = DateTime.Now;
+            await _unitOfWork.SaveChanges();
+
+            return _mapper.Map<Location, LocationDTO>(entity);
         }
 
         private async Task AddLocationImage(Location location, IFormFile image)

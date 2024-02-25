@@ -18,16 +18,22 @@ namespace FishingMap.API.Controllers
 
         // GET api/<ImagesController>/5
         [HttpGet("{*filePath}")]
-        public async Task<FileStreamResult?> Get(string filePath)
+        public async Task<IActionResult> Get(string filePath)
         {
-            var file = await _fileService.GetFile(filePath);
-
-            if (file == null) 
+            try
             {
-                return null;
-            }
+                var file = await _fileService.GetFile(filePath);
+                if (file == null)
+                {
+                    return NotFound();
+                }
 
-            return new FileStreamResult(file, file.ContentType);
+                return new FileStreamResult(file, file.ContentType);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "An error occurred while processing your request.");
+            }
         }
     }
 }

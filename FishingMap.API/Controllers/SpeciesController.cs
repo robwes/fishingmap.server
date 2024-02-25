@@ -21,21 +21,35 @@ namespace FishingMap.API.Controllers
         [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<SpeciesDTO>>> Get([FromQuery] string search = "")
         {
-            var species = await _speciesService.GetSpecies(search);
-            return Ok(species);
+            try
+            {
+                var species = await _speciesService.GetSpecies(search);
+                return Ok(species);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "An error occurred while processing your request.");
+            }
         }
 
         // GET api/<controller>/5
         [HttpGet("{id}")]
         public async Task<ActionResult<SpeciesDTO>> Get(int id)
         {
-            var species = await _speciesService.GetSpeciesById(id);
-            if (species == null)
+            try
             {
-                return NotFound();
-            }
+                var species = await _speciesService.GetSpeciesById(id);
+                if (species == null)
+                {
+                    return NotFound();
+                }
 
-            return Ok(species);
+                return Ok(species);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "An error occurred while processing your request.");
+            }
         }
 
         // POST api/<controller>
@@ -43,8 +57,19 @@ namespace FishingMap.API.Controllers
         [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<SpeciesDTO>> Post([FromForm]SpeciesAdd species)
         {
-            var addedSpecies = await _speciesService.AddSpecies(species);
-            return Created("success", addedSpecies);
+            try
+            {
+                var addedSpecies = await _speciesService.AddSpecies(species);
+                return CreatedAtAction(nameof(Get), new { id = addedSpecies.Id }, addedSpecies);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "An error occurred while processing your request.");
+            }
         }
 
         // PUT api/<controller>/5
@@ -52,13 +77,19 @@ namespace FishingMap.API.Controllers
         [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<SpeciesDTO>> Put(int id, [FromForm]SpeciesUpdate species)
         {
-            var updatedSpecies = await _speciesService.UpdateSpecies(id, species);
-            if (updatedSpecies == null)
+            try
+            {
+                var updatedSpecies = await _speciesService.UpdateSpecies(id, species);
+                return Ok(updatedSpecies);
+            }
+            catch (KeyNotFoundException)
             {
                 return NotFound();
             }
-
-            return Ok(updatedSpecies);
+            catch (Exception)
+            {
+                return StatusCode(500, "An error occurred while processing your request.");
+            }
         }
 
         // DELETE: api/ApiWithActions/5
@@ -66,8 +97,15 @@ namespace FishingMap.API.Controllers
         [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> Delete(int id)
         {
-            await _speciesService.DeleteSpecies(id);
-            return Ok();
+            try
+            {
+                await _speciesService.DeleteSpecies(id);
+                return Ok();
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "An error occurred while processing your request.");
+            }
         }
     }
 }
