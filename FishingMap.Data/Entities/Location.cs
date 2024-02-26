@@ -6,13 +6,16 @@ namespace FishingMap.Data.Entities
 {
     public class Location : IEntity
     {
-        [Required]
         public int Id { get; set; }
 
         [Required]
+        [MaxLength(100)]
         public string Name { get; set; } = string.Empty;
 
+        [MaxLength(5000)]
         public string? Description { get; set; }
+
+        [MaxLength(5000)]
         public string? Rules { get; set; }
 
         [Required]
@@ -25,6 +28,8 @@ namespace FishingMap.Data.Entities
         public double? AverageDepth { get; set; }
         public double? MaxDepth { get; set; }
         public double? Area { get; set; }
+
+        [MaxLength(255)]
         public string? WebSite { get; set; }
 
         [Required]

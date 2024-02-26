@@ -239,8 +239,6 @@ namespace FishingMap.Domain.Services
             await _fileService.DeleteFile(image.Path);
         }
 
-        
-
         private async Task UpdateLocationsImages(Location locationEntity, LocationUpdate locationUpdate)
         {
             if (!locationEntity.Images.IsNullOrEmpty())

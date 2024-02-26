@@ -5,7 +5,6 @@ namespace FishingMap.Data.Entities
 {
     public class Permit : IEntity
     {
-        [Required]
         public int Id { get; set; }
 
         [Required]
