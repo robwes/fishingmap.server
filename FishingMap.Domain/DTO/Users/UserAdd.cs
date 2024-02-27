@@ -1,33 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace FishingMap.Domain.DTO.Users
 {
     public class UserAdd
     {
-        [Required]
-        [MaxLength(50)]
+        [Required, StringLength(50)]
         public string FirstName { get; set; } = string.Empty;
 
-        [Required]
-        [MaxLength(50)]
+        [Required, StringLength(50)]
         public string LastName { get; set; } = string.Empty;
 
-        [Required]
-        [MaxLength(50)]
+        [Required, StringLength(50)]
         public string UserName { get; set; } = string.Empty;
 
-        [Required]
+        [Required, StringLength(100)]
         [EmailAddress]
-        [MaxLength(100)]
         public string Email { get; set; } = string.Empty;
 
         [Required]
-        [MinLength(7), MaxLength(100)]
+        [StringLength(100, MinimumLength = 7)]
         public string Password { get; set; } = string.Empty;
     }
 }

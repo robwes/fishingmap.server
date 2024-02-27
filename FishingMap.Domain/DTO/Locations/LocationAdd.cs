@@ -9,10 +9,13 @@ namespace FishingMap.Domain.DTO.Locations
 {
     public class LocationAdd
     {
-        [Required]
+        [Required, StringLength(100)]
         public string Name { get; set; } = string.Empty;
 
+        [StringLength(5000)]
         public string? Description { get; set; }
+
+        [StringLength(5000)]
         public string? Rules { get; set; }
 
         [Required]
@@ -22,6 +25,8 @@ namespace FishingMap.Domain.DTO.Locations
         public GeoPoint Position { get; set; } = new GeoPoint();
 
         public GeoPoint? NavigationPosition { get; set; }
+
+        [StringLength(255)]
         public string? WebSite { get; set; }
 
         [FromForm]

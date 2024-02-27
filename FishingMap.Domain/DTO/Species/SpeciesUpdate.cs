@@ -8,8 +8,10 @@ namespace FishingMap.Domain.DTO.Species
         [Required]
         public int Id { get; set; }
 
-        [Required]
+        [Required, StringLength(100)]
         public string Name { get; set; } = string.Empty;
+
+        [StringLength(5000)]
         public string? Description { get; set; }
         public List<IFormFile> Images { get; set; } = new List<IFormFile>();
     }

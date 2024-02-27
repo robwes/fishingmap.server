@@ -4,19 +4,17 @@ namespace FishingMap.Domain.DTO.Users
 {
     public class UserDetailsUpdate
     {
+        [Required]
         public int Id { get; set; }
 
-        [Required]
-        [MaxLength(50)]
+        [Required, StringLength(50)]
         public string FirstName { get; set; } = string.Empty;
 
-        [Required]
-        [MaxLength(50)]
+        [Required, StringLength(50)]
         public string LastName { get; set; } = string.Empty;
 
-        [Required]
+        [Required, StringLength(100)]
         [EmailAddress]
-        [MaxLength(100)]
         public string Email { get; set; } = string.Empty;
     }
 }

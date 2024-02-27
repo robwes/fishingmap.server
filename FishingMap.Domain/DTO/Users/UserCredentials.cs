@@ -1,9 +1,16 @@
-﻿namespace FishingMap.Domain.DTO.Users
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace FishingMap.Domain.DTO.Users
 {
     public class UserCredentials
     {
+        [Required, StringLength(50)]
         public string UserName { get; set; } = string.Empty;
+
+        [Required, StringLength(100, MinimumLength = 7)]
         public string Password { get; set; } = string.Empty;
+
+        [Required, StringLength(100, MinimumLength = 7)]
         public string Salt { get; set; } = string.Empty;
     }
 }

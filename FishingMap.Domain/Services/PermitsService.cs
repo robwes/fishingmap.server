@@ -17,7 +17,7 @@ namespace FishingMap.Domain.Services
             _mapper = mapper;
         }
 
-        public async Task<PermitDTO> AddPermit(PermitDTO permit)
+        public async Task<PermitDTO> AddPermit(PermitAdd permit)
         {
             var now = DateTime.Now;
             var entity = new Permit()
@@ -57,7 +57,7 @@ namespace FishingMap.Domain.Services
             return _mapper.Map<IEnumerable<PermitDTO>>(permits);
         }
 
-        public async Task<PermitDTO> UpdatePermit(int id, PermitDTO permit)
+        public async Task<PermitDTO> UpdatePermit(int id, PermitUpdate permit)
         {
             var entity = await _unitOfWork.Permits.GetById(id);
             if (entity == null)

@@ -10,7 +10,6 @@ namespace FishingMap.Domain.DTO.Locations
         public int Id { get; set; }
 
         public string Name { get; set; } = string.Empty;
-
         public string? Description { get; set; }
         public string? Rules { get; set; }
         public string Geometry { get; set; } = string.Empty;

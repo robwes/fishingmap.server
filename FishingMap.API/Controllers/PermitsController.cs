@@ -56,7 +56,7 @@ namespace FishingMap.API.Controllers
         // POST api/<PermitsController>
         [HttpPost]
         [Authorize(Roles = "Administrator")]
-        public async Task<ActionResult<PermitDTO>> Post([FromForm] PermitDTO permit)
+        public async Task<ActionResult<PermitDTO>> Post([FromForm] PermitAdd permit)
         {
             try
             {
@@ -72,7 +72,7 @@ namespace FishingMap.API.Controllers
         // PUT api/<PermitsController>/5
         [HttpPut("{id}")]
         [Authorize(Roles = "Administrator")]
-        public async Task<ActionResult<PermitDTO>> Put(int id, [FromForm] PermitDTO permit)
+        public async Task<ActionResult<PermitDTO>> Put(int id, [FromForm] PermitUpdate permit)
         {
             try
             {

@@ -30,7 +30,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
         public async Task AddPermit_ShouldAddPermitAndReturnPermitDto()
         {
             // Arrange
-            var permitDto = new PermitDTO { Name = "Test", Url = "http://test.com" };
+            var permitDto = new PermitAdd { Name = "Test", Url = "http://test.com" };
             var permit = new Permit { Name = "Test", Url = "http://test.com", Created = DateTime.Now, Modified = DateTime.Now };
             _unitOfWorkMock.Setup(u => u.Permits.Add(It.IsAny<Permit>())).Returns(permit);
 
@@ -49,7 +49,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
         public async Task AddPermit_ShouldThrowException_WhenErrorOccurs()
         {
             // Arrange
-            var permitDto = new PermitDTO { Name = "Test", Url = "http://test.com" };
+            var permitDto = new PermitAdd { Name = "Test", Url = "http://test.com" };
             _unitOfWorkMock.Setup(u => u.Permits.Add(It.IsAny<Permit>())).Throws<Exception>();
 
             // Act & Assert
@@ -60,7 +60,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
         public async Task AddPermit_ShouldCorrectlyMapPermitToPermitDto()
         {
             // Arrange
-            var permitDto = new PermitDTO { Name = "Test", Url = "http://test.com" };
+            var permitDto = new PermitAdd { Name = "Test", Url = "http://test.com" };
             var permit = new Permit { Name = "Test", Url = "http://test.com", Created = DateTime.Now, Modified = DateTime.Now };
             _unitOfWorkMock.Setup(u => u.Permits.Add(It.IsAny<Permit>())).Returns(permit);
 
@@ -188,7 +188,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
         {
             // Arrange
             var id = 1;
-            var permitDto = new PermitDTO { Name = "New name", Url = "http://newurl.com" };
+            var permitDto = new PermitUpdate { Name = "New name", Url = "http://newurl.com" };
             var permit = new Permit { Name = "Test", Url = "http://test.com", Created = DateTime.Now, Modified = DateTime.Now };
             
             _unitOfWorkMock.Setup(u => u.Permits.GetById(id, null, false)).ReturnsAsync(permit);
@@ -208,7 +208,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
         {
             // Arrange
             var id = 1;
-            var permitDto = new PermitDTO { Name = "Test", Url = "http://test.com" };
+            var permitDto = new PermitUpdate { Name = "Test", Url = "http://test.com" };
             _unitOfWorkMock.Setup(u => u.Permits.GetById(id, null, false)).ReturnsAsync((Permit?)null);
 
             // Act & Assert
@@ -220,7 +220,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
         {
             // Arrange
             var id = 1;
-            var permitDto = new PermitDTO { Name = "Test", Url = "http://test.com" };
+            var permitDto = new PermitUpdate { Name = "Test", Url = "http://test.com" };
             _unitOfWorkMock.Setup(u => u.Permits.GetById(id, null, false)).Throws<Exception>();
 
             // Act & Assert
