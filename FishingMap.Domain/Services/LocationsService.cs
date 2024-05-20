@@ -6,7 +6,9 @@ using FishingMap.Domain.DTO.Locations;
 using FishingMap.Domain.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using NetTopologySuite.Features;
 using NetTopologySuite.Geometries;
+using NetTopologySuite.IO;
 using Location = FishingMap.Data.Entities.Location;
 
 namespace FishingMap.Domain.Services
@@ -137,6 +139,41 @@ namespace FishingMap.Domain.Services
         {
             var locations = await _unitOfWork.Locations.FindLocations(search, speciesIds, radius, orgLat, orgLng);
             return _mapper.Map<IEnumerable<Location>, IEnumerable<LocationMarker>>(locations);
+        }
+
+        public async Task<string> GetFeatures(string search = "", List<int>? speciesIds = null, double? radius = null, double? orgLat = null, double? orgLng = null)
+        {
+            var locations = await _unitOfWork.Locations.FindLocations(search, speciesIds, radius, orgLat, orgLng);
+
+            FeatureCollection features = new FeatureCollection();
+
+            foreach (var location in locations)
+            {
+                var feature = new Feature() { 
+                    Geometry = location.Position,
+                    Attributes = new AttributesTable()
+                };
+
+                feature.Attributes.Add("id", location.Id);
+                feature.Attributes.Add("name", location.Name);
+                feature.Attributes.Add("description", location.Description);
+
+                var species = location.Species.Select(s => new { id = s.Id, name = s.Name });
+                feature.Attributes.Add("species", species);
+
+                features.Add(feature);
+            }
+
+            var writer = new GeoJsonWriter();
+            var geoJson = writer.Write(features);
+
+            if (geoJson == null)
+            {
+                throw new InvalidOperationException("Error creating GeoJson");
+            }
+
+            return geoJson;
+
         }
 
         public async Task<IEnumerable<LocationSummary>> GetLocationsSummary(string search = "", List<int>? speciesIds = null, double? radius = null, double? orgLat = null, double? orgLng = null)

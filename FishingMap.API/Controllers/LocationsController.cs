@@ -31,6 +31,20 @@ namespace FishingMap.API.Controllers
             }
         }
 
+        [HttpGet("features")]
+        public async Task<ActionResult<string>> Features([FromQuery] string search = "", [FromQuery] List<int>? sIds = null, [FromQuery] double? radius = null, [FromQuery] double? orgLat = null, [FromQuery] double? orgLng = null)
+        {
+            try
+            {
+                var featureCollection = await _locationService.GetFeatures(search, sIds, radius, orgLat, orgLng);
+                return Ok(featureCollection);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "An error occurred while processing your request.");
+            }
+        }
+
         [HttpGet("markers")]
         public async Task<ActionResult<IEnumerable<LocationMarker>>> Markers([FromQuery] string search = "", [FromQuery] List<int>? sIds = null, [FromQuery] double? radius = null, [FromQuery] double? orgLat = null, [FromQuery] double? orgLng = null)
         {

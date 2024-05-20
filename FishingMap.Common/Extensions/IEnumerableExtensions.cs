@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-
-namespace FishingMap.Common.Extensions
+﻿namespace FishingMap.Common.Extensions
 {
     public static class IEnumerableExtensions
     {
