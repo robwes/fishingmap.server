@@ -24,6 +24,7 @@ namespace FishingMap.Domain.DTO.Locations
         [Required]
         public GeoPoint Position { get; set; } = new GeoPoint();
 
+        [FromForm]
         public GeoPoint? NavigationPosition { get; set; }
 
         [StringLength(255)]

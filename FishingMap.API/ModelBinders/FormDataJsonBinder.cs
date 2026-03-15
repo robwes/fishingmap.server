@@ -1,5 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Newtonsoft.Json;
+using System.Text.Json;
+using NetTopologySuite.Geometries;
+using NetTopologySuite.IO.Converters;
 
 namespace FishingMap.API.ModelBinders
 {
@@ -22,11 +25,18 @@ namespace FishingMap.API.ModelBinders
 
             try
             {
-                // Deserialize the provided value and set the binding result
-                var result = JsonConvert.DeserializeObject(value, bindingContext.ModelType);
+                var options = new System.Text.Json.JsonSerializerOptions 
+                { 
+                    PropertyNameCaseInsensitive = true 
+                };
+                options.Converters.Add(new NetTopologySuite.IO.Converters.GeoJsonConverterFactory(
+                    new NetTopologySuite.Geometries.GeometryFactory(new NetTopologySuite.Geometries.PrecisionModel(), 4326)));
+
+                // Use the fully qualified name here
+                var result = System.Text.Json.JsonSerializer.Deserialize(value, bindingContext.ModelType, options);
                 bindingContext.Result = ModelBindingResult.Success(result);
             }
-            catch (JsonException)
+            catch (System.Text.Json.JsonException)
             {
                 bindingContext.Result = ModelBindingResult.Failed();
             }

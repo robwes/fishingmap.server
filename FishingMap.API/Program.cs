@@ -20,7 +20,12 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddControllers(options =>
-    options.ModelBinderProviders.Insert(0, new FormDataJsonBinderProvider()));
+    options.ModelBinderProviders.Insert(0, new FormDataJsonBinderProvider()))
+    .AddJsonOptions(options =>
+    {
+        var geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
+        options.JsonSerializerOptions.Converters.Add(new NetTopologySuite.IO.Converters.GeoJsonConverterFactory(geometryFactory));
+    });
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
