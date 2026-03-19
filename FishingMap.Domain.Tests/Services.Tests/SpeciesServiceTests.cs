@@ -1,7 +1,8 @@
-﻿using AutoMapper;
+﻿using Mapster; 
+using MapsterMapper;
 using FishingMap.Data.Entities;
 using FishingMap.Data.Interfaces;
-using FishingMap.Domain.AutoMapperProfiles;
+using FishingMap.Domain.MapsterConfig;
 using FishingMap.Domain.DTO.Species;
 using FishingMap.Domain.Interfaces;
 using FishingMap.Domain.Services;
@@ -26,10 +27,9 @@ namespace FishingMap.Domain.Tests.Services.Tests
             _fileServiceMock = new Mock<IFileService>();
             _configMock = new Mock<IFishingMapConfiguration>();
 
-            _mapper = new MapperConfiguration(cfg =>
-            {
-                cfg.AddProfile<DomainProfile>();
-            }).CreateMapper();
+            var config = new TypeAdapterConfig();
+            config.Scan(typeof(MapsterRegister).Assembly);
+            _mapper = new Mapper(config);
 
             var speciesMock = new Mock<ISpeciesRepository>();
             _unitOfWorkMock.Setup(u => u.Species).Returns(speciesMock.Object);
@@ -366,8 +366,9 @@ namespace FishingMap.Domain.Tests.Services.Tests
             Assert.Equal("image1.jpg", result.Images.First().Name);
             _unitOfWorkMock.Verify(u => u.Images.Delete(It.IsAny<Image>()), Times.Once); // Verify that one image was deleted
             _unitOfWorkMock.Verify(u => u.SaveChanges(), Times.Once);
-            _fileServiceMock.Verify(f => f.DeleteFile(It.IsAny<string>()), Times.Once); // Verify that one image file was deleted
+            _fileServiceMock.Verify(f => f.DeleteFile(It.IsAny<string>()), Times.Once); // Verify that one image filewas deleted
         }
 
     }
 }
+

@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+﻿using MapsterMapper;
 using FishingMap.Data.Entities;
 using FishingMap.Data.Interfaces;
 using FishingMap.Domain.DTO.Permits;

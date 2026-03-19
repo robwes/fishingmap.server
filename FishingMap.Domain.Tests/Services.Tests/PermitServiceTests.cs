@@ -1,7 +1,8 @@
-﻿using AutoMapper;
+﻿using Mapster; 
+using MapsterMapper;
 using FishingMap.Data.Entities;
 using FishingMap.Data.Interfaces;
-using FishingMap.Domain.AutoMapperProfiles;
+using FishingMap.Domain.MapsterConfig;
 using FishingMap.Domain.DTO.Permits;
 using FishingMap.Domain.Services;
 using Moq;
@@ -18,10 +19,9 @@ namespace FishingMap.Domain.Tests.Services.Tests
         {
             _unitOfWorkMock = new Mock<IUnitOfWork>();
 
-            _mapper = new MapperConfiguration(cfg =>
-            {
-                cfg.AddProfile<DomainProfile>();
-            }).CreateMapper();
+            var config = new TypeAdapterConfig();
+            config.Scan(typeof(MapsterRegister).Assembly);
+            _mapper = new Mapper(config);
 
             _permitService = new PermitsService(_unitOfWorkMock.Object, _mapper);
         }
@@ -228,3 +228,4 @@ namespace FishingMap.Domain.Tests.Services.Tests
         }
     }
 }
+

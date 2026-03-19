@@ -5,9 +5,11 @@ using FishingMap.API.Services;
 using FishingMap.Data.Context;
 using FishingMap.Data.Interfaces;
 using FishingMap.Data.Repositories;
-using FishingMap.Domain.AutoMapperProfiles;
+using FishingMap.Domain.MapsterConfig;
 using FishingMap.Domain.Interfaces;
 using FishingMap.Domain.Services;
+using Mapster;
+using MapsterMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
@@ -64,7 +66,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAutoMapper(typeof(DomainProfile));
+// Configure Mapster
+var config = TypeAdapterConfig.GlobalSettings;
+config.Scan(typeof(MapsterRegister).Assembly);
+builder.Services.AddSingleton(config);
+builder.Services.AddScoped<IMapper, ServiceMapper>();
 
 // Register the database context
 var connectionString = builder.Configuration.GetConnectionString("FishingMapDatabase");
