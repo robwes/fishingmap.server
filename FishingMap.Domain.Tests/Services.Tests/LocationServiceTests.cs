@@ -1,7 +1,8 @@
-﻿using AutoMapper;
+﻿using Mapster; 
+using MapsterMapper;
 using FishingMap.Data.Entities;
 using FishingMap.Data.Interfaces;
-using FishingMap.Domain.AutoMapperProfiles;
+using FishingMap.Domain.MapsterConfig;
 using FishingMap.Domain.DTO.Locations;
 using FishingMap.Domain.DTO.Permits;
 using FishingMap.Domain.DTO.Species;
@@ -31,10 +32,9 @@ namespace FishingMap.Domain.Tests.Services.Tests
             _fileServiceMock = new Mock<IFileService>();
             _configMock = new Mock<IFishingMapConfiguration>();
 
-            _mapper = new MapperConfiguration(cfg =>
-            {
-                cfg.AddProfile<DomainProfile>();
-            }).CreateMapper();
+            var config = new TypeAdapterConfig();
+            config.Scan(typeof(MapsterRegister).Assembly);
+            _mapper = new Mapper(config);
 
             _geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
 
@@ -420,3 +420,4 @@ namespace FishingMap.Domain.Tests.Services.Tests
 
     }
 }
+
