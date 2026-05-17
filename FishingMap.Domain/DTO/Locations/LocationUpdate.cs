@@ -33,6 +33,8 @@ namespace FishingMap.Domain.DTO.Locations
         [StringLength(255)]
         public string? WebSite { get; set; }
 
+        public int? RegionId { get; set; }
+
         [FromForm]
         public IEnumerable<SpeciesDTO> Species { get; set; } = new List<SpeciesDTO>();
 

@@ -1,4 +1,4 @@
-﻿using FishingMap.Common.Utils;
+using FishingMap.Common.Utils;
 using FishingMap.Data.Entities;
 
 namespace FishingMap.Data.Context
@@ -16,15 +16,28 @@ namespace FishingMap.Data.Context
         {
             _context.Database.EnsureCreated();
 
-            // Look for any users.
+            var now = DateTime.Now;
+
+            if (!_context.Regions.Any(r => r.Type == RegionType.National))
+            {
+                _context.Regions.Add(new Region
+                {
+                    Name = "Finland",
+                    Type = RegionType.National,
+                    ParentRegionId = null,
+                    Created = now,
+                    Modified = now
+                });
+                await _context.SaveChangesAsync();
+            }
+
             if (_context.Users.Any())
             {
-                return;   // DB has been seeded
+                return;
             }
 
             var passwordSalt = Cryptography.CreateSalt();
             var passwordHash = Cryptography.CreateHash("admin12", passwordSalt);
-            var now = DateTime.Now;
 
             var adminRole = new Role { Id = 1, Name = "Administrator" };
             var userRole = new Role { Id = 2, Name = "User" };

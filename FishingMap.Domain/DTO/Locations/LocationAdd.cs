@@ -1,4 +1,4 @@
-﻿using FishingMap.Domain.DTO.Geometries;
+using FishingMap.Domain.DTO.Geometries;
 using FishingMap.Domain.DTO.Permits;
 using FishingMap.Domain.DTO.Species;
 using Microsoft.AspNetCore.Http;
@@ -29,6 +29,8 @@ namespace FishingMap.Domain.DTO.Locations
 
         [StringLength(255)]
         public string? WebSite { get; set; }
+
+        public int? RegionId { get; set; }
 
         [FromForm]
         public IEnumerable<SpeciesDTO> Species { get; set; } = new List<SpeciesDTO>();

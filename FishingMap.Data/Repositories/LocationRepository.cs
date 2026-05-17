@@ -49,7 +49,8 @@ namespace FishingMap.Data.Repositories
                 id,
                 [l => l.Species.OrderBy(s => s.Name),
                  l => l.Permits.OrderBy(p => p.Name),
-                 l => l.Images], noTracking);
+                 l => l.Images,
+                 l => l.Region!], noTracking);
         }
     }
 }

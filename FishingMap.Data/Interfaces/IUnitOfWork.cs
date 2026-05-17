@@ -1,4 +1,4 @@
-﻿namespace FishingMap.Data.Interfaces
+namespace FishingMap.Data.Interfaces
 {
     public interface IUnitOfWork
     {
@@ -6,9 +6,11 @@
         ILocationOwnerRepository LocationOwners { get; }
         ILocationRepository Locations { get; }
         IPermitRepository Permits { get; }
+        IRegionRepository Regions { get; }
         IRoleRepository Roles { get; }
-        ISpeciesRepository Species { get; }   
+        ISpeciesRepository Species { get; }
+        ISpeciesRegulationRepository SpeciesRegulations { get; }
         IUserRepository Users { get; }
-        Task SaveChanges();    
+        Task SaveChanges();
     }
 }
