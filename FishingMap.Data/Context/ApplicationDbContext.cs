@@ -1,4 +1,4 @@
-﻿using FishingMap.Data.Entities;
+using FishingMap.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace FishingMap.Data.Context
@@ -15,7 +15,10 @@ namespace FishingMap.Data.Context
         public virtual DbSet<User> Users { get; set; }
         public virtual DbSet<Role> Roles { get; set; }
         public virtual DbSet<Image> Images { get; set; }
-        public virtual DbSet<Permit> Permits { get; set; }    
+        public virtual DbSet<Permit> Permits { get; set; }
+        public virtual DbSet<Region> Regions { get; set; }
+        public virtual DbSet<SpeciesRegulation> SpeciesRegulations { get; set; }
+        public virtual DbSet<ProtectedPeriod> ProtectedPeriods { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -38,6 +41,17 @@ namespace FishingMap.Data.Context
                     {
                         ru.HasKey("RoleId", "UserId");
                     });
+
+            modelBuilder.Entity<Region>()
+                .HasOne(r => r.Parent)
+                .WithMany(r => r.Children)
+                .HasForeignKey(r => r.ParentRegionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Region>()
+                .HasIndex(r => r.Type)
+                .IsUnique()
+                .HasFilter("[Type] = 0");
         }
     }
 }

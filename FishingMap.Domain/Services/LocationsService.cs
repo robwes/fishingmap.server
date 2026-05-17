@@ -20,19 +20,22 @@ namespace FishingMap.Domain.Services
         private readonly GeometryFactory _geometryFactory;
         private readonly IFileService _fileService;
         private readonly IFishingMapConfiguration _config;
+        private readonly IRegulationsService _regulationsService;
 
         public LocationsService(
-            IUnitOfWork unitOfWork,  
+            IUnitOfWork unitOfWork,
             IFileService fileService,
             IFishingMapConfiguration config,
             GeometryFactory geometryFactory,
-            IMapper mapper)
+            IMapper mapper,
+            IRegulationsService regulationsService)
         {
             _unitOfWork = unitOfWork;
             _fileService = fileService;
             _config = config;
             _geometryFactory = geometryFactory;
             _mapper = mapper;
+            _regulationsService = regulationsService;
         }
 
         public async Task<LocationDTO> AddLocation(LocationAdd location)
@@ -45,17 +48,19 @@ namespace FishingMap.Domain.Services
                 WebSite = location.WebSite
             };
 
+            await AssignRegion(entity, location.RegionId);
+
             if (location.Species != null)
             {
                 var sIds = location.Species.Select(f => f.Id).Distinct();
                 var species = await _unitOfWork.Species.GetAll(s => sIds.Contains(s.Id));
                 entity.Species = (ICollection<Species>)species;
-            }           
+            }
 
             if (location.Permits != null)
             {
                 var pIds = location.Permits.Select(f => f.Id).Distinct();
-                var permits = await _unitOfWork.Permits.GetAll(p => pIds.Contains(p.Id));               
+                var permits = await _unitOfWork.Permits.GetAll(p => pIds.Contains(p.Id));
                 entity.Permits = (ICollection<Permit>)permits;
             }
 
@@ -121,12 +126,14 @@ namespace FishingMap.Domain.Services
         public async Task<LocationDTO?> GetLocation(int id)
         {
             var location = await _unitOfWork.Locations.GetLocationWithDetails(id, true);
-
-            if (location != null)
+            if (location == null)
             {
-                return _mapper.Map<Location, LocationDTO>(location);
+                return null;
             }
-            return null;
+
+            var dto = _mapper.Map<Location, LocationDTO>(location);
+            dto.SpeciesRules = await _regulationsService.GetEffectiveRulesForLocation(id);
+            return dto;
         }
 
         public async Task<IEnumerable<LocationSummary>> GetLocations(string search = "", List<int>? speciesIds = null, double? radius = null, double? orgLat = null, double? orgLng = null)
@@ -195,6 +202,8 @@ namespace FishingMap.Domain.Services
             entity.Rules = location.Rules;
             entity.WebSite = location.WebSite;
 
+            await AssignRegion(entity, location.RegionId);
+
             var geometry = _geometryFactory.GeoJsonFeatureToMultiPolygon(location.Geometry);
             if (geometry == null)
             {
@@ -245,6 +254,25 @@ namespace FishingMap.Domain.Services
             await _unitOfWork.SaveChanges();
 
             return _mapper.Map<Location, LocationDTO>(entity);
+        }
+
+        private async Task AssignRegion(Location entity, int? regionId)
+        {
+            if (!regionId.HasValue)
+            {
+                entity.RegionId = null;
+                entity.Region = null;
+                return;
+            }
+
+            var region = await _unitOfWork.Regions.GetById(regionId.Value);
+            if (region == null)
+            {
+                throw new ArgumentException($"Region with id {regionId.Value} not found.");
+            }
+
+            entity.Region = region;
+            entity.RegionId = region.Id;
         }
 
         private async Task AddLocationImage(Location location, IFormFile image)

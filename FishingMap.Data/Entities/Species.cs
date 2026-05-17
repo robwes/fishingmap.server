@@ -21,5 +21,6 @@ namespace FishingMap.Data.Entities
 
         public virtual ICollection<Location> Locations { get; set; } = new HashSet<Location>();
         public virtual ICollection<Image> Images { get; set; } = new HashSet<Image>();
+        public virtual ICollection<SpeciesRegulation> Regulations { get; set; } = new HashSet<SpeciesRegulation>();
     }
 }

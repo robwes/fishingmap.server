@@ -1,4 +1,4 @@
-﻿using FishingMap.Data.Context;
+using FishingMap.Data.Context;
 using FishingMap.Data.Interfaces;
 
 namespace FishingMap.Data.Repositories
@@ -10,8 +10,10 @@ namespace FishingMap.Data.Repositories
         public ILocationOwnerRepository LocationOwners { get; private set; }
         public ILocationRepository Locations { get; private set; }
         public IPermitRepository Permits { get; private set; }
+        public IRegionRepository Regions { get; private set; }
         public IRoleRepository Roles { get; private set; }
         public ISpeciesRepository Species { get; private set; }
+        public ISpeciesRegulationRepository SpeciesRegulations { get; private set; }
         public IUserRepository Users { get; private set; }
 
         public UnitOfWork(ApplicationDbContext context,
@@ -19,8 +21,10 @@ namespace FishingMap.Data.Repositories
                           ILocationOwnerRepository locationOwnerRepository,
                           ILocationRepository locationRepository,
                           IPermitRepository permitRepository,
+                          IRegionRepository regionRepository,
                           IRoleRepository roleRepository,
                           ISpeciesRepository speciesRepository,
+                          ISpeciesRegulationRepository speciesRegulationRepository,
                           IUserRepository userRepository)
         {
             _context = context;
@@ -28,8 +32,10 @@ namespace FishingMap.Data.Repositories
             LocationOwners = locationOwnerRepository;
             Locations = locationRepository;
             Permits = permitRepository;
+            Regions = regionRepository;
             Roles = roleRepository;
             Species = speciesRepository;
+            SpeciesRegulations = speciesRegulationRepository;
             Users = userRepository;
         }
 

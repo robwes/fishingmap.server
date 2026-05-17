@@ -22,6 +22,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
         private readonly Mock<IFileService> _fileServiceMock;
         private readonly Mock<IFishingMapConfiguration> _configMock;
+        private readonly Mock<IRegulationsService> _regulationsServiceMock;
         private readonly IMapper _mapper;
         private readonly GeometryFactory _geometryFactory;
         private readonly LocationsService _locationService;
@@ -31,6 +32,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
             _unitOfWorkMock = new Mock<IUnitOfWork>();
             _fileServiceMock = new Mock<IFileService>();
             _configMock = new Mock<IFishingMapConfiguration>();
+            _regulationsServiceMock = new Mock<IRegulationsService>();
 
             var config = new TypeAdapterConfig();
             config.Scan(typeof(MapsterRegister).Assembly);
@@ -51,11 +53,12 @@ namespace FishingMap.Domain.Tests.Services.Tests
                 .Returns((int id) => $"path/to/locations/{id}");
 
             _locationService = new LocationsService(
-                _unitOfWorkMock.Object, 
-                _fileServiceMock.Object, 
-                _configMock.Object, 
+                _unitOfWorkMock.Object,
+                _fileServiceMock.Object,
+                _configMock.Object,
                 _geometryFactory,
-                _mapper);
+                _mapper,
+                _regulationsServiceMock.Object);
         }
 
         [Fact]

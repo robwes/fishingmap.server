@@ -85,8 +85,10 @@ builder.Services.AddScoped<IImageRepository, ImageRepository>();
 builder.Services.AddScoped<ILocationOwnerRepository, LocationOwnerRepository>();
 builder.Services.AddScoped<ILocationRepository, LocationRepository>();
 builder.Services.AddScoped<IPermitRepository, PermitRepository>();
+builder.Services.AddScoped<IRegionRepository, RegionRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddScoped<ISpeciesRepository, SpeciesRepository>();
+builder.Services.AddScoped<ISpeciesRegulationRepository, SpeciesRegulationRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 // Register the UnitOfWork
@@ -105,6 +107,8 @@ builder.Services.AddScoped<ISpeciesService, SpeciesService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPermitsService, PermitsService>();
+builder.Services.AddScoped<IRegionsService, RegionsService>();
+builder.Services.AddScoped<IRegulationsService, RegulationsService>();
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 

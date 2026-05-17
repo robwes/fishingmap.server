@@ -41,8 +41,12 @@ namespace FishingMap.Data.Entities
         public int? LocationOwnerId { get; set; }
         public virtual LocationOwner? Owner { get; set; }
 
+        public int? RegionId { get; set; }
+        public virtual Region? Region { get; set; }
+
         public virtual ICollection<Species> Species { get; set; } = new HashSet<Species>();
         public virtual ICollection<Image> Images { get; set; } = new HashSet<Image>();
         public virtual ICollection<Permit> Permits { get; set; } = new HashSet<Permit>();
+        public virtual ICollection<SpeciesRegulation> SpeciesRegulations { get; set; } = new HashSet<SpeciesRegulation>();
     }
 }
