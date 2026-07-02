@@ -12,7 +12,12 @@
       "Bash(dotnet build *)",
       "Bash(dotnet build)",
       "Bash(dotnet test *)",
-      "Bash(dotnet test)"
+      "Bash(dotnet test)",
+      "Bash(curl -sk *)",
+      "Bash(curl -s *)",
+      "Bash(curl -sf *)",
+      "Bash(dotnet ef migrations list *)",
+      "Bash(openssl rand *)"
     ]
   }
 }

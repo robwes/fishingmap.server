@@ -23,6 +23,16 @@ EF Core migrations (must specify both projects — connection string lives in AP
 
 CI/CD: `.github/workflows/master_fishingmapapi.yml` builds, tests, and deploys to Azure Web App `fishingmapapi` on push to `master`.
 
+## Deploying to production
+
+Ordering rule: **expand the schema first, then ship the code** — additive migrations are compatible with the still-running old app, but new code that needs a missing table is not.
+
+1. Commit. If migrations are pending on prod, run the `deploy-migrations` skill (idempotent script, shows diff, requires explicit confirmation). Check state read-only with `dotnet ef migrations list ... --connection $env:FISHINGMAP_PROD_CONN` (PowerShell; the env var holds the prod connection string — never read it from user secrets, those point at dev).
+2. `git push origin master`, then watch with `gh run watch <id>` (gh CLI is installed and authenticated as robwes).
+3. Verify: `curl -s https://api.fishingmap.fi/api/species` → 200, `/api/auth/whoami` → 401, login with bad creds → 400. First request after restart can be slow (cold start) — retry before concluding breakage.
+
+The frontend repo (`fishingmap.web`) deploys the same way — push to its `master` triggers its workflow (re-enabled July 2026; the build's *contents* deploy to wwwroot root — see that repo's AGENTS.md). Rollback strategy is fix-forward or `git revert` + push; never run `Down()` migrations against prod.
+
 ## Architecture
 
 Five projects in a layered dependency chain `API → Domain → Data → Common`:

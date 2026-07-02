@@ -81,7 +81,12 @@ curl -sk -c "$CJ" -X POST https://localhost:7299/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"userName":"<user>","password":"<password>"}'
 curl -sk -b "$CJ" https://localhost:7299/api/auth/whoami
+# rotate the session (login also set a refreshToken cookie, path=/api/auth)
+curl -sk -b "$CJ" -c "$CJ" -X POST https://localhost:7299/api/auth/refresh
 ```
+
+Login is rate-limited to 5 attempts/min per IP (429 after that) — don't
+loop login probes.
 
 The `DbInitializer` default is admin/admin12, but **the local dev DB has a
 different admin password** (verified July 2026: admin/admin12 → 400 "Invalid
@@ -104,10 +109,10 @@ Or F5 in Visual Studio (profile `FishingMap.API`).
   does not reproduce here.
 - **`http://localhost:5000` 307-redirects to https** (`UseHttpsRedirection`);
   probe the 7299 origin directly.
-- **Expected startup noise** (not new breakage): NU1901 NuGet vulnerability
-  warnings, EF decimal-precision warnings for
-  `SpeciesRegulation.MinimumSizeCm`/`MaximumSizeCm`, and an EF
-  `MultipleCollectionIncludeWarning` on the first `/api/locations` query.
+- **Startup should be warning-free** (as of July 2026): the NU1901 NuGet
+  warnings, EF decimal-precision warnings, and `MultipleCollectionIncludeWarning`
+  were all fixed. If a build or startup warning appears, treat it as new
+  breakage, not known noise.
 - **Development env logs full SQL** for every request (EF `Debug` logging) —
   the background output file grows fast; grep it rather than reading whole.
 - **CORS allows only `http://localhost:3000`** in dev — irrelevant for curl
