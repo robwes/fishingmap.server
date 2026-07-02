@@ -48,6 +48,12 @@ namespace FishingMap.Domain.Tests.Services.Tests
             );
         }
 
+        private static FormFile CreateTestImage(string fileName, string name = "Data")
+        {
+            var content = Encoding.UTF8.GetBytes("test image content");
+            return new FormFile(new MemoryStream(content), 0, content.Length, name, fileName);
+        }
+
         [Fact]
         public async Task AddSpecies_ShouldAddSpecies_WhenSpeciesDoesNotExist()
         {
@@ -243,7 +249,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
                 Id = speciesId,
                 Name = "Updated Species",
                 Description = "Updated Description",
-                Images = new List<IFormFile> { new FormFile(new MemoryStream(), 0, 0, "Data", "image.jpg") }
+                Images = new List<IFormFile> { CreateTestImage("image.jpg") }
             };
 
             var species = new Species

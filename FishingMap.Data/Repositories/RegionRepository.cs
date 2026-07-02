@@ -26,12 +26,19 @@ namespace FishingMap.Data.Repositories
             // Loop loads each ancestor with one query each. Acceptable: the chain is at most a few rows
             // (Location → kalatalousalue → ELY → National) and ancestry is read-only and cacheable.
             var chain = new List<Region>();
+            var visited = new HashSet<int>();
             var current = await _context.Regions
                 .AsNoTracking()
                 .FirstOrDefaultAsync(r => r.Id == regionId);
 
             while (current != null)
             {
+                if (!visited.Add(current.Id))
+                {
+                    throw new InvalidOperationException(
+                        $"Region hierarchy contains a cycle involving region {current.Id}.");
+                }
+
                 chain.Add(current);
                 if (current.ParentRegionId is null)
                 {

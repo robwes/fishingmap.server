@@ -46,13 +46,7 @@ namespace FishingMap.Data.Repositories
                 query = query.AsNoTracking();
             }
 
-            if (includeProperties != null)
-            {
-                foreach (var includeProperty in includeProperties)
-                {
-                    query = query.Include(includeProperty);
-                }
-            }
+            query = ApplyIncludes(query, includeProperties);
 
             return await query.FirstOrDefaultAsync(filter);
         }
@@ -75,13 +69,7 @@ namespace FishingMap.Data.Repositories
                 query = query.Where(filter);
             }
 
-            if (includeProperties != null)
-            {
-                foreach (var includeProperty in includeProperties)
-                {
-                    query = query.Include(includeProperty);
-                }
-            }   
+            query = ApplyIncludes(query, includeProperties);
 
             if (orderBy != null)
             {
@@ -105,15 +93,33 @@ namespace FishingMap.Data.Repositories
                 query = query.AsNoTracking();
             }
 
-            if (includeProperties != null)
-            {
-                foreach (var includeProperty in includeProperties)
-                {
-                    query = query.Include(includeProperty);
-                }
-            }
+            query = ApplyIncludes(query, includeProperties);
 
             return await query.FirstOrDefaultAsync(e => e.Id == id);
+        }
+
+        private static IQueryable<TEntity> ApplyIncludes(
+            IQueryable<TEntity> query,
+            Expression<Func<TEntity, object>>[]? includeProperties)
+        {
+            if (includeProperties == null)
+            {
+                return query;
+            }
+
+            foreach (var includeProperty in includeProperties)
+            {
+                query = query.Include(includeProperty);
+            }
+
+            // Multiple includes in single-query mode produce cartesian products;
+            // EF only splits collection includes, so reference includes are unaffected.
+            if (includeProperties.Length > 1)
+            {
+                query = query.AsSplitQuery();
+            }
+
+            return query;
         }
 
         // update an entity in the database

@@ -52,31 +52,25 @@ namespace FishingMap.Domain.Tests.Services.Tests
         }
 
         [Fact]
-        public async Task AddUser_ShouldReturnNull_WhenUserAlreadyExists()
+        public async Task AddUser_ShouldThrowArgumentException_WhenUserAlreadyExists()
         {
             // Arrange
             var userAdd = new UserAdd { UserName = "TestUser", Email = "test@example.com", Password = "TestPassword" };
 
             _unitOfWorkMock.Setup(u => u.Users.Any(It.IsAny<Expression<Func<User, bool>>>())).ReturnsAsync(true);
 
-            // Act
-            var result = await _userService.AddUser(userAdd);
-
-            // Assert
-            Assert.Null(result);
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() => _userService.AddUser(userAdd));
         }
 
         [Fact]
-        public async Task AddUser_ShouldReturnNull_WhenPasswordIsEmpty()
+        public async Task AddUser_ShouldThrowArgumentException_WhenPasswordIsEmpty()
         {
             // Arrange
             var userAdd = new UserAdd { UserName = "TestUser", Email = "test@example.com", Password = "" };
 
-            // Act
-            var result = await _userService.AddUser(userAdd);
-
-            // Assert
-            Assert.Null(result);
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() => _userService.AddUser(userAdd));
         }
 
         [Fact]
@@ -104,31 +98,25 @@ namespace FishingMap.Domain.Tests.Services.Tests
         }
 
         [Fact]
-        public async Task AddAdministrator_ShouldReturnNull_WhenUserAlreadyExists()
+        public async Task AddAdministrator_ShouldThrowArgumentException_WhenUserAlreadyExists()
         {
             // Arrange
             var userAdd = new UserAdd { UserName = "TestAdmin", Email = "admin@example.com", Password = "AdminPassword" };
 
             _unitOfWorkMock.Setup(u => u.Users.Any(It.IsAny<Expression<Func<User, bool>>>())).ReturnsAsync(true);
 
-            // Act
-            var result = await _userService.AddAdministrator(userAdd);
-
-            // Assert
-            Assert.Null(result);
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() => _userService.AddAdministrator(userAdd));
         }
 
         [Fact]
-        public async Task AddAdministrator_ShouldReturnNull_WhenPasswordIsEmpty()
+        public async Task AddAdministrator_ShouldThrowArgumentException_WhenPasswordIsEmpty()
         {
             // Arrange
             var userAdd = new UserAdd { UserName = "TestAdmin", Email = "admin@example.com", Password = "" };
 
-            // Act
-            var result = await _userService.AddAdministrator(userAdd);
-
-            // Assert
-            Assert.Null(result);
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() => _userService.AddAdministrator(userAdd));
         }
 
         [Fact]

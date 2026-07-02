@@ -20,6 +20,7 @@ namespace FishingMap.Data.Repositories
                 .Include(r => r.Locations)
                 .Include(r => r.ProtectedPeriods)
                 .Include(r => r.Region)
+                .AsSplitQuery()
                 .Where(r =>
                     r.Locations.Any(l => l.Id == locationId)
                     || (r.RegionId.HasValue && ancestorIds.Contains(r.RegionId.Value)))

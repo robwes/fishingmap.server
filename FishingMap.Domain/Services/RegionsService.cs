@@ -51,7 +51,7 @@ namespace FishingMap.Domain.Services
                 throw new ArgumentException($"Parent region with id {region.ParentRegionId.Value} not found.");
             }
 
-            var now = DateTime.Now;
+            var now = DateTime.UtcNow;
             var entity = new Region
             {
                 Name = region.Name,
@@ -103,12 +103,18 @@ namespace FishingMap.Domain.Services
                 {
                     throw new ArgumentException($"Parent region with id {region.ParentRegionId.Value} not found.");
                 }
+
+                var parentAncestry = await _unitOfWork.Regions.GetAncestry(region.ParentRegionId.Value);
+                if (parentAncestry.Any(a => a.Id == id))
+                {
+                    throw new ArgumentException("Region cannot be moved under one of its own descendants.");
+                }
             }
 
             entity.Name = region.Name;
             entity.Type = region.Type;
             entity.ParentRegionId = region.ParentRegionId;
-            entity.Modified = DateTime.Now;
+            entity.Modified = DateTime.UtcNow;
 
             await _unitOfWork.SaveChanges();
             return _mapper.Map<RegionDTO>(entity);

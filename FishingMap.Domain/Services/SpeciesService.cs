@@ -4,6 +4,7 @@ using FishingMap.Data.Entities;
 using FishingMap.Data.Interfaces;
 using FishingMap.Domain.DTO.Species;
 using FishingMap.Domain.Interfaces;
+using FishingMap.Domain.Utils;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
@@ -29,9 +30,10 @@ namespace FishingMap.Domain.Services
             var entity = new Species
             {
                 Name = species.Name,
+                ScientificName = species.ScientificName,
                 Description = species.Description,
-                Created = DateTime.Now,
-                Modified = DateTime.Now
+                Created = DateTime.UtcNow,
+                Modified = DateTime.UtcNow
             };
 
             if (await _unitOfWork.Species.Any(s => s.Name == species.Name))
@@ -97,11 +99,18 @@ namespace FishingMap.Domain.Services
                 throw new KeyNotFoundException($"Species with id {id} not found.");
             }
 
+            if (entity.Name != species.Name &&
+                await _unitOfWork.Species.Any(s => s.Name == species.Name && s.Id != id))
+            {
+                throw new ArgumentException($"A species with the name {species.Name} already exists.");
+            }
+
             entity.Name = species.Name;
+            entity.ScientificName = species.ScientificName;
             entity.Description = species.Description;
 
             await UpdateSpeciesImages(entity, species);
-            entity.Modified = DateTime.Now;
+            entity.Modified = DateTime.UtcNow;
 
             await _unitOfWork.SaveChanges();
 
@@ -110,6 +119,8 @@ namespace FishingMap.Domain.Services
 
         private async Task AddSpeciesImage(Species species, IFormFile image)
         {
+            ImageUpload.Validate(image);
+
             var filePath = await _fileService.AddFile(
                 image,
                 $"species/{species.Id}"
@@ -125,8 +136,8 @@ namespace FishingMap.Domain.Services
             {
                 Name = fileName,
                 Path = filePath,
-                Created = DateTime.Now,
-                Modified = DateTime.Now
+                Created = DateTime.UtcNow,
+                Modified = DateTime.UtcNow
             });
         }
 
@@ -139,11 +150,14 @@ namespace FishingMap.Domain.Services
 
         private async Task UpdateSpeciesImages(Species speciesEntity, SpeciesUpdate speciesUpdate)
         {
+            if (speciesUpdate.Images == null)
+            {
+                return;
+            }
+
             if (!speciesEntity.Images.IsNullOrEmpty())
             {
-                // Get the list of file names of the images in the update model
-                var imagesInUpdateModel = speciesUpdate.Images?.Select(img => img.FileName) ?? new List<string>();
-                // Find the images in the species entity that are not in the update model
+                var imagesInUpdateModel = speciesUpdate.Images.Select(img => img.FileName);
                 var imagesToDelete = speciesEntity.Images.Where(img => !imagesInUpdateModel.Contains(img.Name)).ToList();
 
                 foreach (var image in imagesToDelete)
@@ -152,17 +166,12 @@ namespace FishingMap.Domain.Services
                 }
             }
 
-            if (!speciesUpdate.Images!.IsNullOrEmpty())
-            {
-                // Get the list of file names of the images in the species entity
-                var imagesInEntityModel = speciesEntity.Images?.Select(img => img.Name) ?? new List<string>();
-                // Find the images in the update model that are not in the species entity
-                var imagesToAdd = speciesUpdate.Images!.Where(i => !imagesInEntityModel.Contains(i.FileName)).ToList();
+            var imagesInEntityModel = speciesEntity.Images?.Select(img => img.Name) ?? new List<string>();
+            var imagesToAdd = speciesUpdate.Images!.Where(i => !imagesInEntityModel.Contains(i.FileName)).ToList();
 
-                foreach (var image in imagesToAdd)
-                {
-                    await AddSpeciesImage(speciesEntity, image);
-                }
+            foreach (var image in imagesToAdd)
+            {
+                await AddSpeciesImage(speciesEntity, image);
             }
         }
     }

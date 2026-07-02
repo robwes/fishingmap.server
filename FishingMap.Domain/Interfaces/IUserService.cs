@@ -4,8 +4,8 @@ namespace FishingMap.Domain.Interfaces
 {
     public interface IUserService
     {
-        Task<UserDTO?> AddUser(UserAdd user);
-        Task<UserDTO?> AddAdministrator(UserAdd user);
+        Task<UserDTO> AddUser(UserAdd user);
+        Task<UserDTO> AddAdministrator(UserAdd user);
         Task DeleteUser(int id);
         Task<UserDTO?> GetUser(int id);
         Task<UserDTO?> GetUserByEmail(string email);

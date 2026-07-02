@@ -1,4 +1,6 @@
-﻿using FishingMap.Domain.DTO.Locations;
+﻿using FishingMap.Domain.DTO.Images;
+using FishingMap.Domain.DTO.Locations;
+using Microsoft.AspNetCore.Http;
 
 namespace FishingMap.Domain.Interfaces
 {
@@ -12,5 +14,10 @@ namespace FishingMap.Domain.Interfaces
         Task<IEnumerable<LocationMarker>> GetMarkers(string search = "", List<int>? speciesIds = null, double? radius = null, double? orgLat = null, double? orgLng = null);
         Task<string> GetFeatures(string search = "", List<int>? speciesIds = null, double? radius = null, double? orgLat = null, double? orgLng = null);
         Task<LocationDTO> UpdateLocation(int id, LocationUpdate location);
+        Task<LocationDTO> UpdateLocationInfo(int id, LocationInfoPatch patch);
+        Task<LocationDTO> UpdateLocationAssociations(int id, LocationAssociationsPatch patch);
+        Task<ImageDTO> AddImageToLocation(int id, IFormFile image);
+        Task RemoveImageFromLocation(int id, int imageId);
+        Task<LocationDTO> UpdateLocationGeometry(int id, LocationGeometryPatch patch);
     }
 }

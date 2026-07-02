@@ -2,8 +2,10 @@
 using FishingMap.Common.Extensions;
 using FishingMap.Data.Entities;
 using FishingMap.Data.Interfaces;
+using FishingMap.Domain.DTO.Images;
 using FishingMap.Domain.DTO.Locations;
 using FishingMap.Domain.Interfaces;
+using FishingMap.Domain.Utils;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using NetTopologySuite.Features;
@@ -86,8 +88,8 @@ namespace FishingMap.Domain.Services
                 entity.NavigationPosition = null;
             }
 
-            entity.Created = DateTime.Now;
-            entity.Modified = DateTime.Now;
+            entity.Created = DateTime.UtcNow;
+            entity.Modified = DateTime.UtcNow;
             entity = _unitOfWork.Locations.Add(entity);
             await _unitOfWork.SaveChanges();
 
@@ -138,8 +140,13 @@ namespace FishingMap.Domain.Services
 
         public async Task<IEnumerable<LocationSummary>> GetLocations(string search = "", List<int>? speciesIds = null, double? radius = null, double? orgLat = null, double? orgLng = null)
         {
-            var locations = await _unitOfWork.Locations.FindLocations(search, speciesIds, radius, orgLat, orgLng);
-            return _mapper.Map<IEnumerable<Location>, IEnumerable<LocationSummary>>(locations);
+            var results = await _unitOfWork.Locations.FindLocationsWithDistance(search, speciesIds, radius, orgLat, orgLng);
+            return results.Select(r =>
+            {
+                var dto = _mapper.Map<Location, LocationSummary>(r.Location);
+                dto.Distance = r.DistanceKm;
+                return dto;
+            }).ToList();
         }
 
         public async Task<IEnumerable<LocationMarker>> GetMarkers(string search = "", List<int>? speciesIds = null, double? radius = null, double? orgLat = null, double? orgLng = null)
@@ -185,8 +192,13 @@ namespace FishingMap.Domain.Services
 
         public async Task<IEnumerable<LocationSummary>> GetLocationsSummary(string search = "", List<int>? speciesIds = null, double? radius = null, double? orgLat = null, double? orgLng = null)
         {
-            var locations = await _unitOfWork.Locations.FindLocations(search, speciesIds, radius, orgLat, orgLng);
-            return _mapper.Map<IEnumerable<Location>, IEnumerable<LocationSummary>>(locations);
+            var results = await _unitOfWork.Locations.FindLocationsWithDistance(search, speciesIds, radius, orgLat, orgLng);
+            return results.Select(r =>
+            {
+                var dto = _mapper.Map<Location, LocationSummary>(r.Location);
+                dto.Distance = r.DistanceKm;
+                return dto;
+            }).ToList();
         }
 
         public async Task<LocationDTO> UpdateLocation(int id, LocationUpdate location)
@@ -250,7 +262,7 @@ namespace FishingMap.Domain.Services
 
             await UpdateLocationsImages(entity, location);
 
-            entity.Modified = DateTime.Now;
+            entity.Modified = DateTime.UtcNow;
             await _unitOfWork.SaveChanges();
 
             return _mapper.Map<Location, LocationDTO>(entity);
@@ -275,8 +287,10 @@ namespace FishingMap.Domain.Services
             entity.RegionId = region.Id;
         }
 
-        private async Task AddLocationImage(Location location, IFormFile image)
+        private async Task<Image> AddLocationImage(Location location, IFormFile image)
         {
+            ImageUpload.Validate(image);
+
             var filePath = await _fileService.AddFile(
                 image,
                 $"locations/{location.Id}"
@@ -288,13 +302,15 @@ namespace FishingMap.Domain.Services
                 location.Images = new List<Image>();
             }
 
-            location.Images.Add(new Image
+            var newImage = new Image
             {
                 Name = fileName,
                 Path = filePath,
-                Created = DateTime.Now,
-                Modified = DateTime.Now
-            });
+                Created = DateTime.UtcNow,
+                Modified = DateTime.UtcNow
+            };
+            location.Images.Add(newImage);
+            return newImage;
         }
 
         private async Task DeleteLocationImage(Location location, Image image)
@@ -331,6 +347,106 @@ namespace FishingMap.Domain.Services
                     await AddLocationImage(locationEntity, image);
                 }
             }
+        }
+
+        public async Task<LocationDTO> UpdateLocationInfo(int id, LocationInfoPatch patch)
+        {
+            var entity = await _unitOfWork.Locations.GetLocationWithDetails(id);
+            if (entity == null)
+                throw new KeyNotFoundException($"Location with id {id} not found.");
+
+            if (patch.Name.HasValue)
+            {
+                if (string.IsNullOrEmpty(patch.Name.Value))
+                    throw new ArgumentException("Name cannot be empty.");
+                entity.Name = patch.Name.Value;
+            }
+            if (patch.Description.HasValue) entity.Description = string.IsNullOrEmpty(patch.Description.Value) ? null : patch.Description.Value;
+            if (patch.Rules.HasValue) entity.Rules = string.IsNullOrEmpty(patch.Rules.Value) ? null : patch.Rules.Value;
+            if (patch.WebSite.HasValue) entity.WebSite = string.IsNullOrEmpty(patch.WebSite.Value) ? null : patch.WebSite.Value;
+            if (patch.RegionId.HasValue) await AssignRegion(entity, patch.RegionId.Value);
+
+            entity.Modified = DateTime.UtcNow;
+            await _unitOfWork.SaveChanges();
+            return _mapper.Map<Location, LocationDTO>(entity);
+        }
+
+        public async Task<LocationDTO> UpdateLocationAssociations(int id, LocationAssociationsPatch patch)
+        {
+            var entity = await _unitOfWork.Locations.GetLocationWithDetails(id);
+            if (entity == null)
+                throw new KeyNotFoundException($"Location with id {id} not found.");
+
+            var sIds = patch.Species.Select(s => s.Id).Distinct();
+            var species = await _unitOfWork.Species.GetAll(s => sIds.Contains(s.Id));
+            entity.Species = (ICollection<Species>)species;
+
+            var pIds = patch.Permits.Select(p => p.Id).Distinct();
+            var permits = await _unitOfWork.Permits.GetAll(p => pIds.Contains(p.Id));
+            entity.Permits = (ICollection<Permit>)permits;
+
+            entity.Modified = DateTime.UtcNow;
+            await _unitOfWork.SaveChanges();
+            return _mapper.Map<Location, LocationDTO>(entity);
+        }
+
+        public async Task<ImageDTO> AddImageToLocation(int id, IFormFile image)
+        {
+            var entity = await _unitOfWork.Locations.GetById(id, [l => l.Images]);
+            if (entity == null)
+                throw new KeyNotFoundException($"Location with id {id} not found.");
+
+            var newImage = await AddLocationImage(entity, image);
+            await _unitOfWork.SaveChanges();
+            return _mapper.Map<Image, ImageDTO>(newImage);
+        }
+
+        public async Task RemoveImageFromLocation(int id, int imageId)
+        {
+            var entity = await _unitOfWork.Locations.GetById(id, [l => l.Images]);
+            if (entity == null)
+                throw new KeyNotFoundException($"Location with id {id} not found.");
+
+            var image = entity.Images?.FirstOrDefault(i => i.Id == imageId);
+            if (image == null)
+                throw new KeyNotFoundException($"Image with id {imageId} not found on location {id}.");
+
+            await DeleteLocationImage(entity, image);
+            await _unitOfWork.SaveChanges();
+        }
+
+        public async Task<LocationDTO> UpdateLocationGeometry(int id, LocationGeometryPatch patch)
+        {
+            var entity = await _unitOfWork.Locations.GetLocationWithDetails(id);
+            if (entity == null)
+                throw new KeyNotFoundException($"Location with id {id} not found.");
+
+            MultiPolygon? geometry;
+            try
+            {
+                geometry = _geometryFactory.GeoJsonFeatureToMultiPolygon(patch.Geometry);
+            }
+            catch (Exception)
+            {
+                throw new ArgumentException("Invalid geometry");
+            }
+            if (geometry == null)
+                throw new ArgumentException("Invalid geometry");
+
+            entity.Geometry = geometry;
+            entity.Position = entity.Geometry.Centroid;
+            entity.Area = entity.Geometry.Area;
+
+            if (patch.NavigationPosition != null)
+                entity.NavigationPosition = _geometryFactory.CreatePoint(
+                    patch.NavigationPosition.Longitude,
+                    patch.NavigationPosition.Latitude);
+            else
+                entity.NavigationPosition = null;
+
+            entity.Modified = DateTime.UtcNow;
+            await _unitOfWork.SaveChanges();
+            return _mapper.Map<Location, LocationDTO>(entity);
         }
     }
 }

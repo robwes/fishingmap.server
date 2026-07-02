@@ -1,5 +1,6 @@
 using FishingMap.Common.Utils;
 using FishingMap.Data.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace FishingMap.Data.Context
 {
@@ -16,7 +17,7 @@ namespace FishingMap.Data.Context
         {
             _context.Database.EnsureCreated();
 
-            var now = DateTime.Now;
+            var now = DateTime.UtcNow;
 
             if (!_context.Regions.Any(r => r.Type == RegionType.National))
             {
@@ -39,23 +40,25 @@ namespace FishingMap.Data.Context
             var passwordSalt = Cryptography.CreateSalt();
             var passwordHash = Cryptography.CreateHash("admin12", passwordSalt);
 
-            var adminRole = new Role { Id = 1, Name = "Administrator" };
-            var userRole = new Role { Id = 2, Name = "User" };
+            // Reuse existing roles if present — Role.Name has a unique index
+            var adminRole = await _context.Roles.FirstOrDefaultAsync(r => r.Name == "Administrator")
+                ?? new Role { Name = "Administrator" };
+            var userRole = await _context.Roles.FirstOrDefaultAsync(r => r.Name == "User")
+                ?? new Role { Name = "User" };
 
             var adminUser = new User
             {
-                Id = 1,
                 FirstName = "Lord Admin",
                 LastName = "First of His Name",
                 Email = "admin@fishingmap.se",
                 UserName = "admin",
                 Password = passwordHash,
                 Salt = passwordSalt,
+                Roles = new List<Role> { adminRole, userRole },
                 Created = now,
                 Modified = now
             };
 
-            _context.Roles.AddRange(adminRole, userRole);
             _context.Users.Add(adminUser);
             await _context.SaveChangesAsync();
         }

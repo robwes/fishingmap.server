@@ -6,6 +6,7 @@ namespace FishingMap.Data.Interfaces
         ILocationOwnerRepository LocationOwners { get; }
         ILocationRepository Locations { get; }
         IPermitRepository Permits { get; }
+        IRefreshTokenRepository RefreshTokens { get; }
         IRegionRepository Regions { get; }
         IRoleRepository Roles { get; }
         ISpeciesRepository Species { get; }

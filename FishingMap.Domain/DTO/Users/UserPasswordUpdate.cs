@@ -4,10 +4,11 @@ namespace FishingMap.Domain.DTO.Users
 {
     public class UserPasswordUpdate
     {
-        [Required, StringLength(100, MinimumLength = 7)]
+        // CurrentPassword only needs to match what's stored, so no new-password policy on it
+        [Required, StringLength(100)]
         public string CurrentPassword { get; set; } = string.Empty;
 
-        [Required, StringLength(100, MinimumLength = 7)]
+        [Required, StringLength(100, MinimumLength = 8)]
         public string NewPassword { get; set; } = string.Empty;
     }
 }

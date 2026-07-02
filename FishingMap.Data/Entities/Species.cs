@@ -11,6 +11,9 @@ namespace FishingMap.Data.Entities
         [MaxLength(100)]
         public string Name { get; set; } = string.Empty;
 
+        [MaxLength(100)]
+        public string? ScientificName { get; set; }
+
         [MaxLength(5000)]
         public string? Description { get; set; }
 

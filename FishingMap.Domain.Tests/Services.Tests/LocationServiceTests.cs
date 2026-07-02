@@ -1,8 +1,9 @@
-﻿using Mapster; 
+﻿using Mapster;
 using MapsterMapper;
 using FishingMap.Data.Entities;
 using FishingMap.Data.Interfaces;
 using FishingMap.Domain.MapsterConfig;
+using FishingMap.Domain.DTO.Common;
 using FishingMap.Domain.DTO.Locations;
 using FishingMap.Domain.DTO.Permits;
 using FishingMap.Domain.DTO.Species;
@@ -61,6 +62,12 @@ namespace FishingMap.Domain.Tests.Services.Tests
                 _regulationsServiceMock.Object);
         }
 
+        private static FormFile CreateTestImage(string fileName, string name = "Data")
+        {
+            var content = new byte[] { 1, 2, 3, 4 };
+            return new FormFile(new MemoryStream(content), 0, content.Length, name, fileName);
+        }
+
         [Fact]
         public async Task AddLocation_ShouldAddLocationAndReturnLocationDTO_WhenLocationAddIsProvided()
         {
@@ -74,7 +81,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
                 Species = new List<SpeciesDTO> { new SpeciesDTO { Id = 1, Name = "Test Species" } },
                 Permits = new List<PermitDTO> { new PermitDTO { Id = 1, Name = "Test Permit", Url = "https://test.com" } },
                 Geometry = "{\"type\":\"Feature\",\"geometry\":{\"type\":\"MultiPolygon\",\"coordinates\":[[[[30.0,20.0],[45.0,40.0],[10.0,40.0],[30.0,20.0]]]]},\"properties\":null}",
-                Images = new List<IFormFile> { new FormFile(new MemoryStream(), 0, 0, "Data", "image.jpg") }
+                Images = new List<IFormFile> { CreateTestImage("image.jpg") }
             };
 
             _unitOfWorkMock.Setup(u => u.Species.GetAll(
@@ -372,7 +379,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
                 Description = "Updated Description",
                 Rules = "Updated Rules",
                 WebSite = "Updated Website",
-                Images = new List<IFormFile> { new FormFile(new MemoryStream(), 0, 0, "Data", "image2.jpg") },
+                Images = new List<IFormFile> { CreateTestImage("image2.jpg") },
                 Geometry = "{\"type\":\"Feature\",\"geometry\":{\"type\":\"MultiPolygon\",\"coordinates\":[[[[40.1,30.0],[55.0,50.0],[20.0,50.0],[40.1,30.0]]]]},\"properties\":null}"
             };
             var location = new Location { Id = locationId, Images = new List<Image> { new Image { Id = 1, Name = "image1.jpg", Path = "path/to/image1.jpg" } } };
@@ -420,7 +427,282 @@ namespace FishingMap.Domain.Tests.Services.Tests
             Assert.Empty(result.Images);
         }
 
+        // --- UpdateLocationInfo ---
 
+        [Fact]
+        public async Task UpdateLocationInfo_AppliesPresentFields_SkipsAbsent()
+        {
+            // Arrange
+            var locationId = 1;
+            var location = new Location { Id = locationId, Name = "Original", Description = "Original Desc", Rules = "Original Rules" };
+            _unitOfWorkMock.Setup(u => u.Locations.GetLocationWithDetails(locationId, false)).ReturnsAsync(location);
+
+            var patch = new LocationInfoPatch
+            {
+                Name = Optional<string>.Of("New Name"),
+                Description = Optional<string?>.Of(null)
+            };
+
+            // Act
+            var result = await _locationService.UpdateLocationInfo(locationId, patch);
+
+            // Assert
+            Assert.Equal("New Name", result.Name);
+            Assert.Null(result.Description);
+            Assert.Equal("Original Rules", result.Rules);
+        }
+
+        [Fact]
+        public async Task UpdateLocationInfo_ThrowsKeyNotFoundException_WhenLocationMissing()
+        {
+            _unitOfWorkMock.Setup(u => u.Locations.GetLocationWithDetails(99, false)).ReturnsAsync((Location?)null);
+
+            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+                _locationService.UpdateLocationInfo(99, new LocationInfoPatch()));
+        }
+
+        [Fact]
+        public async Task UpdateLocationInfo_ThrowsArgumentException_WhenNameIsEmpty()
+        {
+            var locationId = 1;
+            var location = new Location { Id = locationId, Name = "Original" };
+            _unitOfWorkMock.Setup(u => u.Locations.GetLocationWithDetails(locationId, false)).ReturnsAsync(location);
+
+            var patch = new LocationInfoPatch { Name = Optional<string>.Of(string.Empty) };
+
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                _locationService.UpdateLocationInfo(locationId, patch));
+        }
+
+        // --- UpdateLocationAssociations ---
+
+        [Fact]
+        public async Task UpdateLocationAssociations_ReplacesSpeciesAndPermits()
+        {
+            // Arrange
+            var locationId = 1;
+            var location = new Location { Id = locationId, Species = new List<Species> { new Species { Id = 1, Name = "Old" } }, Permits = new List<Permit>() };
+            _unitOfWorkMock.Setup(u => u.Locations.GetLocationWithDetails(locationId, false)).ReturnsAsync(location);
+            _unitOfWorkMock.Setup(u => u.Species.GetAll(It.IsAny<Expression<Func<Species, bool>>>(), null, null, false))
+                .ReturnsAsync(new List<Species> { new Species { Id = 2, Name = "New Species" } });
+            _unitOfWorkMock.Setup(u => u.Permits.GetAll(It.IsAny<Expression<Func<Permit, bool>>>(), null, null, false))
+                .ReturnsAsync(new List<Permit> { new Permit { Id = 3, Name = "New Permit", Url = "https://test.com" } });
+
+            var patch = new LocationAssociationsPatch
+            {
+                Species = new List<SpeciesDTO> { new SpeciesDTO { Id = 2, Name = "New Species" } },
+                Permits = new List<PermitDTO> { new PermitDTO { Id = 3, Name = "New Permit", Url = "https://test.com" } }
+            };
+
+            // Act
+            var result = await _locationService.UpdateLocationAssociations(locationId, patch);
+
+            // Assert
+            Assert.Single(result.Species);
+            Assert.Contains(result.Species, s => s.Name == "New Species");
+            Assert.Single(result.Permits);
+        }
+
+        [Fact]
+        public async Task UpdateLocationAssociations_ThrowsKeyNotFoundException_WhenLocationMissing()
+        {
+            _unitOfWorkMock.Setup(u => u.Locations.GetLocationWithDetails(99, false)).ReturnsAsync((Location?)null);
+
+            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+                _locationService.UpdateLocationAssociations(99, new LocationAssociationsPatch()));
+        }
+
+        [Fact]
+        public async Task UpdateLocationAssociations_ClearsAssociations_WhenEmptyListsSent()
+        {
+            var locationId = 1;
+            var location = new Location
+            {
+                Id = locationId,
+                Species = new List<Species> { new Species { Id = 1, Name = "Old" } },
+                Permits = new List<Permit> { new Permit { Id = 1, Name = "Old", Url = "x" } }
+            };
+            _unitOfWorkMock.Setup(u => u.Locations.GetLocationWithDetails(locationId, false)).ReturnsAsync(location);
+            _unitOfWorkMock.Setup(u => u.Species.GetAll(It.IsAny<Expression<Func<Species, bool>>>(), null, null, false))
+                .ReturnsAsync(new List<Species>());
+            _unitOfWorkMock.Setup(u => u.Permits.GetAll(It.IsAny<Expression<Func<Permit, bool>>>(), null, null, false))
+                .ReturnsAsync(new List<Permit>());
+
+            var result = await _locationService.UpdateLocationAssociations(locationId, new LocationAssociationsPatch());
+
+            Assert.Empty(result.Species);
+            Assert.Empty(result.Permits);
+        }
+
+        // --- AddImageToLocation ---
+
+        [Fact]
+        public async Task AddImageToLocation_ReturnsImageDTO_WithPopulatedData()
+        {
+            var locationId = 1;
+            var location = new Location { Id = locationId, Images = new List<Image>() };
+            _unitOfWorkMock.Setup(u => u.Locations.GetById(locationId, It.IsAny<Expression<Func<Location, object>>[]>(), false))
+                .ReturnsAsync(location);
+            _fileServiceMock.Setup(f => f.AddFile(It.IsAny<IFormFile>(), It.IsAny<string>()))
+                .ReturnsAsync("locations/1/test.jpg");
+
+            var file = CreateTestImage("test.jpg", "image");
+
+            var result = await _locationService.AddImageToLocation(locationId, file);
+
+            Assert.NotNull(result);
+            Assert.Equal("test.jpg", result.Name);
+        }
+
+        [Fact]
+        public async Task AddImageToLocation_ThrowsKeyNotFoundException_WhenLocationMissing()
+        {
+            _unitOfWorkMock.Setup(u => u.Locations.GetById(99, It.IsAny<Expression<Func<Location, object>>[]>(), false))
+                .ReturnsAsync((Location?)null);
+
+            var file = CreateTestImage("test.jpg", "image");
+
+            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+                _locationService.AddImageToLocation(99, file));
+        }
+
+        [Fact]
+        public async Task AddImageToLocation_ThrowsArgumentException_WhenFileIsEmpty()
+        {
+            var locationId = 1;
+            var location = new Location { Id = locationId, Images = new List<Image>() };
+            _unitOfWorkMock.Setup(u => u.Locations.GetById(locationId, It.IsAny<Expression<Func<Location, object>>[]>(), false))
+                .ReturnsAsync(location);
+
+            var emptyFile = new FormFile(new MemoryStream(), 0, 0, "image", "empty.jpg");
+
+            var ex = await Assert.ThrowsAsync<ArgumentException>(() =>
+                _locationService.AddImageToLocation(locationId, emptyFile));
+            Assert.Contains("empty", ex.Message);
+            _fileServiceMock.Verify(f => f.AddFile(It.IsAny<IFormFile>(), It.IsAny<string>()), Times.Never);
+        }
+
+        // --- RemoveImageFromLocation ---
+
+        [Fact]
+        public async Task RemoveImageFromLocation_DeletesImageFileAndDbRow()
+        {
+            var locationId = 1;
+            var image = new Image { Id = 5, Name = "img.jpg", Path = "locations/1/img.jpg" };
+            var location = new Location { Id = locationId, Images = new List<Image> { image } };
+            _unitOfWorkMock.Setup(u => u.Locations.GetById(locationId, It.IsAny<Expression<Func<Location, object>>[]>(), false))
+                .ReturnsAsync(location);
+
+            await _locationService.RemoveImageFromLocation(locationId, 5);
+
+            _unitOfWorkMock.Verify(u => u.Images.Delete(image), Times.Once);
+            _fileServiceMock.Verify(f => f.DeleteFile("locations/1/img.jpg"), Times.Once);
+            _unitOfWorkMock.Verify(u => u.SaveChanges(), Times.Once);
+        }
+
+        [Fact]
+        public async Task RemoveImageFromLocation_ThrowsKeyNotFoundException_WhenImageNotOnLocation()
+        {
+            var locationId = 1;
+            var location = new Location { Id = locationId, Images = new List<Image> { new Image { Id = 1, Name = "a.jpg", Path = "x" } } };
+            _unitOfWorkMock.Setup(u => u.Locations.GetById(locationId, It.IsAny<Expression<Func<Location, object>>[]>(), false))
+                .ReturnsAsync(location);
+
+            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+                _locationService.RemoveImageFromLocation(locationId, 999));
+        }
+
+        // --- UpdateLocationGeometry ---
+
+        [Fact]
+        public async Task UpdateLocationGeometry_RecalculatesPositionAndArea()
+        {
+            var locationId = 1;
+            var location = new Location { Id = locationId };
+            _unitOfWorkMock.Setup(u => u.Locations.GetLocationWithDetails(locationId, false)).ReturnsAsync(location);
+
+            var patch = new LocationGeometryPatch
+            {
+                Geometry = "{\"type\":\"Feature\",\"geometry\":{\"type\":\"MultiPolygon\",\"coordinates\":[[[[30.0,20.0],[45.0,40.0],[10.0,40.0],[30.0,20.0]]]]},\"properties\":null}"
+            };
+
+            var result = await _locationService.UpdateLocationGeometry(locationId, patch);
+
+            Assert.NotNull(result);
+            Assert.Equal(patch.Geometry, result.Geometry);
+        }
+
+        [Fact]
+        public async Task UpdateLocationGeometry_ThrowsArgumentException_OnInvalidGeometry()
+        {
+            var locationId = 1;
+            var location = new Location { Id = locationId };
+            _unitOfWorkMock.Setup(u => u.Locations.GetLocationWithDetails(locationId, false)).ReturnsAsync(location);
+
+            var patch = new LocationGeometryPatch { Geometry = "not-valid-geojson" };
+
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                _locationService.UpdateLocationGeometry(locationId, patch));
+        }
+
+        [Fact]
+        public async Task UpdateLocationGeometry_ClearsNavigationPosition_WhenNullSent()
+        {
+            var locationId = 1;
+            var location = new Location
+            {
+                Id = locationId,
+                NavigationPosition = new Point(25.0, 60.0) { SRID = 4326 }
+            };
+            _unitOfWorkMock.Setup(u => u.Locations.GetLocationWithDetails(locationId, false)).ReturnsAsync(location);
+
+            var patch = new LocationGeometryPatch
+            {
+                Geometry = "{\"type\":\"Feature\",\"geometry\":{\"type\":\"MultiPolygon\",\"coordinates\":[[[[30.0,20.0],[45.0,40.0],[10.0,40.0],[30.0,20.0]]]]},\"properties\":null}",
+                NavigationPosition = null
+            };
+
+            await _locationService.UpdateLocationGeometry(locationId, patch);
+
+            Assert.Null(location.NavigationPosition);
+        }
+
+        // --- GetLocations (distance) ---
+
+        [Fact]
+        public async Task GetLocations_AssignsDistanceAndPreservesOrder_WhenOriginProvided()
+        {
+            var near = new Location { Id = 1, Name = "Near", Position = new Point(24.9, 60.1) { SRID = 4326 } };
+            var far = new Location { Id = 2, Name = "Far", Position = new Point(25.5, 60.5) { SRID = 4326 } };
+            var repoResult = new List<(Location, double?)> { (near, 2.5), (far, 40.0) };
+
+            _unitOfWorkMock
+                .Setup(u => u.Locations.FindLocationsWithDistance("", null, null, 60.17, 24.94))
+                .ReturnsAsync(repoResult);
+
+            var result = (await _locationService.GetLocations(orgLat: 60.17, orgLng: 24.94)).ToList();
+
+            Assert.Equal(2, result.Count);
+            Assert.Equal(new[] { 1, 2 }, result.Select(r => r.Id));
+            Assert.Equal(2.5, result[0].Distance);
+            Assert.Equal(40.0, result[1].Distance);
+        }
+
+        [Fact]
+        public async Task GetLocations_LeavesDistanceNull_WhenNoOriginProvided()
+        {
+            var location = new Location { Id = 1, Name = "A", Position = new Point(24.9, 60.1) { SRID = 4326 } };
+            var repoResult = new List<(Location, double?)> { (location, null) };
+
+            _unitOfWorkMock
+                .Setup(u => u.Locations.FindLocationsWithDistance("", null, null, null, null))
+                .ReturnsAsync(repoResult);
+
+            var result = (await _locationService.GetLocations()).ToList();
+
+            Assert.Single(result);
+            Assert.Null(result[0].Distance);
+        }
     }
 }
 

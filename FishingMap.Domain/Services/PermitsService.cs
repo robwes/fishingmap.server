@@ -19,7 +19,7 @@ namespace FishingMap.Domain.Services
 
         public async Task<PermitDTO> AddPermit(PermitAdd permit)
         {
-            var now = DateTime.Now;
+            var now = DateTime.UtcNow;
             var entity = new Permit()
             {
                 Name = permit.Name,
@@ -67,7 +67,7 @@ namespace FishingMap.Domain.Services
 
             entity.Name = permit.Name;
             entity.Url = permit.Url;
-            entity.Modified = DateTime.Now;
+            entity.Modified = DateTime.UtcNow;
 
             await _unitOfWork.SaveChanges();
 

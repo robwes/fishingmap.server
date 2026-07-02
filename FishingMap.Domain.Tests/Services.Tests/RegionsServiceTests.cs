@@ -136,11 +136,36 @@ namespace FishingMap.Domain.Tests.Services.Tests
         }
 
         [Fact]
+        public async Task UpdateRegion_ShouldThrow_WhenParentIsDescendant()
+        {
+            // Region 2 is the parent of region 3; moving 2 under 3 would create a cycle.
+            _regionsRepoMock.Setup(r => r.GetById(2, null, false))
+                .ReturnsAsync(new Region { Id = 2, Name = "Uusimaa", Type = RegionType.Ely, ParentRegionId = 1 });
+            _regionsRepoMock.Setup(r => r.Any(It.IsAny<Expression<Func<Region, bool>>>())).ReturnsAsync(true);
+            _regionsRepoMock.Setup(r => r.GetAncestry(3)).ReturnsAsync(new List<Region>
+            {
+                new Region { Id = 3, Type = RegionType.ManagementArea, ParentRegionId = 2 },
+                new Region { Id = 2, Type = RegionType.Ely, ParentRegionId = 1 },
+                new Region { Id = 1, Type = RegionType.National }
+            });
+
+            var upd = new RegionUpdate { Id = 2, Name = "Uusimaa", Type = RegionType.Ely, ParentRegionId = 3 };
+
+            var ex = await Assert.ThrowsAsync<ArgumentException>(() => _service.UpdateRegion(2, upd));
+            Assert.Contains("descendants", ex.Message);
+        }
+
+        [Fact]
         public async Task UpdateRegion_ShouldPersist_WhenValid()
         {
             var entity = new Region { Id = 2, Name = "Old", Type = RegionType.Ely, ParentRegionId = 1 };
             _regionsRepoMock.Setup(r => r.GetById(2, null, false)).ReturnsAsync(entity);
             _regionsRepoMock.Setup(r => r.Any(It.IsAny<Expression<Func<Region, bool>>>())).ReturnsAsync(true);
+            _regionsRepoMock.Setup(r => r.GetAncestry(3)).ReturnsAsync(new List<Region>
+            {
+                new Region { Id = 3, Type = RegionType.Ely, ParentRegionId = 1 },
+                new Region { Id = 1, Type = RegionType.National }
+            });
 
             var upd = new RegionUpdate { Id = 2, Name = "New", Type = RegionType.ManagementArea, ParentRegionId = 3 };
             var dto = await _service.UpdateRegion(2, upd);

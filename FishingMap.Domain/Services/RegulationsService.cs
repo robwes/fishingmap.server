@@ -44,7 +44,7 @@ namespace FishingMap.Domain.Services
                 throw new ArgumentException($"Species with id {input.SpeciesId} not found.");
             }
 
-            var now = DateTime.Now;
+            var now = DateTime.UtcNow;
             var entity = new SpeciesRegulation
             {
                 SpeciesId = input.SpeciesId,
@@ -96,13 +96,13 @@ namespace FishingMap.Domain.Services
             entity.IsCatchAndReleaseOnly = input.IsCatchAndReleaseOnly;
             entity.MustReportCatch = input.MustReportCatch;
             entity.AdditionalRules = input.AdditionalRules;
-            entity.Modified = DateTime.Now;
+            entity.Modified = DateTime.UtcNow;
 
             entity.Locations.Clear();
             await AttachLocations(entity, input.LocationIds);
 
             entity.ProtectedPeriods.Clear();
-            var now = DateTime.Now;
+            var now = DateTime.UtcNow;
             foreach (var p in input.ProtectedPeriods)
             {
                 entity.ProtectedPeriods.Add(new ProtectedPeriod

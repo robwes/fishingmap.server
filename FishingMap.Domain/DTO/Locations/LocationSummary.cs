@@ -10,6 +10,7 @@ namespace FishingMap.Domain.DTO.Locations
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
         public GeoPoint Position { get; set; } = new GeoPoint();
+        public double? Distance { get; set; }
         public IEnumerable<SpeciesIdName> Species { get; set; } = new List<SpeciesIdName>();
         public IEnumerable<ImageDTO> Images { get; set; } = new List<ImageDTO>();
     }

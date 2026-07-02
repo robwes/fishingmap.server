@@ -18,40 +18,44 @@ namespace FishingMap.Domain.Services
             _mapper = mapper;
         }
 
-        public async Task<UserDTO?> AddUser(UserAdd user)
+        public async Task<UserDTO> AddUser(UserAdd user)
         {
-            if (!string.IsNullOrWhiteSpace(user.Password) &&
-                !await _unitOfWork.Users.Any(u =>
-                    u.UserName == user.UserName || u.Email == user.Email)
-                )
-            {
-                var roles = await _unitOfWork.Roles
-                    .GetAll(r => r.Name == "User");
-                    
-                var newUser = await AddUserToDb(user, roles.ToArray());
+            await EnsureCanAddUser(user);
 
-                return _mapper.Map<UserDTO>(newUser);
-            }
+            var roles = await _unitOfWork.Roles
+                .GetAll(r => r.Name == "User");
 
-            return null;
+            var newUser = await AddUserToDb(user, roles.ToArray());
+
+            return _mapper.Map<UserDTO>(newUser);
         }
 
-        public async Task<UserDTO?> AddAdministrator(UserAdd user)
+        public async Task<UserDTO> AddAdministrator(UserAdd user)
         {
-            if (!string.IsNullOrWhiteSpace(user.Password) &&
-                !await _unitOfWork.Users.Any(u =>
-                    u.UserName == user.UserName || u.Email == user.Email)
-                )
+            await EnsureCanAddUser(user);
+
+            // Roles must be tracked: on Add, EF marks the whole untracked graph
+            // as Added and would try to re-insert the Role rows.
+            var roles = await _unitOfWork.Roles
+                .GetAll(r => r.Name == "Administrator" || r.Name == "User");
+
+            var newUser = await AddUserToDb(user, roles.ToArray());
+
+            return _mapper.Map<UserDTO>(newUser);
+        }
+
+        private async Task EnsureCanAddUser(UserAdd user)
+        {
+            if (string.IsNullOrWhiteSpace(user.Password))
             {
-                var roles = await _unitOfWork.Roles
-                    .GetAll(r => r.Name == "Administrator" || r.Name == "User", noTracking: true);
-
-                var newUser = await AddUserToDb(user, roles.ToArray());
-
-                return _mapper.Map<UserDTO>(newUser);
+                throw new ArgumentException("Password is required.");
             }
 
-            return null;
+            if (await _unitOfWork.Users.Any(u =>
+                    u.UserName == user.UserName || u.Email == user.Email))
+            {
+                throw new ArgumentException("A user with the same username or email already exists.");
+            }
         }
 
         public async Task DeleteUser(int id)
@@ -146,7 +150,7 @@ namespace FishingMap.Domain.Services
             userEntity.FirstName = user.FirstName;
             userEntity.LastName = user.LastName;
             userEntity.Email = user.Email;
-            userEntity.Modified = DateTime.Now;
+            userEntity.Modified = DateTime.UtcNow;
 
             await _unitOfWork.SaveChanges();
 
@@ -159,7 +163,7 @@ namespace FishingMap.Domain.Services
             if (userEntity != null)
             {
                 userEntity.Password = Cryptography.CreateHash(password, userEntity.Salt);
-                userEntity.Modified = DateTime.Now;
+                userEntity.Modified = DateTime.UtcNow;
                 await _unitOfWork.SaveChanges();
 
                 return true;
@@ -184,7 +188,7 @@ namespace FishingMap.Domain.Services
                 Roles = roles
             };
 
-            var now = DateTime.Now;
+            var now = DateTime.UtcNow;
             entity.Created = now;
             entity.Modified = now;
 

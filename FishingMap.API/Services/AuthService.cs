@@ -27,7 +27,9 @@ namespace FishingMap.API.Services
 
             var claims = new List<Claim>()
             {
-                new Claim(ClaimTypes.NameIdentifier, user.UserName),
+                // Id (not username) identifies the user so renames don't orphan sessions
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Name, user.UserName),
                 new Claim(ClaimTypes.Email, user.Email)
             };
 
@@ -49,7 +51,7 @@ namespace FishingMap.API.Services
             var token = new JwtSecurityToken(_config["Jwt:Issuer"],
               _config["Jwt:Audience"],
               claims.ToArray(),
-              expires: DateTime.Now.AddMinutes(60),
+              expires: DateTime.UtcNow.AddMinutes(60),
               signingCredentials: credentials);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
@@ -57,14 +59,10 @@ namespace FishingMap.API.Services
 
         public async Task<UserDTO?> GetCurrentUser(HttpContext httpContext)
         {
-            var identity = httpContext.User.Identity as ClaimsIdentity;
-            if (identity?.Claims?.Count() > 0)
+            var idClaim = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (int.TryParse(idClaim, out var userId))
             {
-                var username = identity.Claims.FirstOrDefault(o => o.Type == ClaimTypes.NameIdentifier)?.Value;
-                if (username != null)
-                {
-                    return await _userService.GetUserByUsername(username);
-                }
+                return await _userService.GetUser(userId);
             }
             return null;
         }
@@ -72,6 +70,11 @@ namespace FishingMap.API.Services
         public bool ValidateUserPassword(UserCredentials userCredentials, string password)
         {
             return Cryptography.Validate(password, userCredentials.Salt, userCredentials.Password);
+        }
+
+        public bool ValidateUserPassword(UserCredentials userCredentials, string password, out bool needsRehash)
+        {
+            return Cryptography.Validate(password, userCredentials.Salt, userCredentials.Password, out needsRehash);
         }
     }
 }

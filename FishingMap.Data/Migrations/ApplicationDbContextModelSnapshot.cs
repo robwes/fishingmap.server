@@ -252,6 +252,41 @@ namespace FishingMap.Data.Migrations
                     b.ToTable("ProtectedPeriods");
                 });
 
+            modelBuilder.Entity("FishingMap.Data.Entities.RefreshToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("Expires")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("Revoked")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RefreshTokens");
+                });
+
             modelBuilder.Entity("FishingMap.Data.Entities.Region", b =>
                 {
                     b.Property<int>("Id")
@@ -332,6 +367,10 @@ namespace FishingMap.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<string>("ScientificName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.HasKey("Id");
 
                     b.ToTable("Species");
@@ -359,10 +398,12 @@ namespace FishingMap.Data.Migrations
                         .HasColumnType("bit");
 
                     b.Property<decimal?>("MaximumSizeCm")
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(6, 2)
+                        .HasColumnType("decimal(6,2)");
 
                     b.Property<decimal?>("MinimumSizeCm")
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(6, 2)
+                        .HasColumnType("decimal(6,2)");
 
                     b.Property<DateTime>("Modified")
                         .HasColumnType("datetime2");
@@ -431,7 +472,10 @@ namespace FishingMap.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserName", "Email")
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.HasIndex("UserName")
                         .IsUnique();
 
                     b.ToTable("Users");
@@ -532,6 +576,17 @@ namespace FishingMap.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Regulation");
+                });
+
+            modelBuilder.Entity("FishingMap.Data.Entities.RefreshToken", b =>
+                {
+                    b.HasOne("FishingMap.Data.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("FishingMap.Data.Entities.Region", b =>

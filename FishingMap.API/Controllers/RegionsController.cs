@@ -20,96 +20,45 @@ namespace FishingMap.API.Controllers
         [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<RegionDTO>>> Get()
         {
-            try
-            {
-                var regions = await _regionsService.GetRegions();
-                return Ok(regions);
-            }
-            catch (Exception)
-            {
-                return StatusCode(500, "An error occurred while processing your request.");
-            }
+            var regions = await _regionsService.GetRegions();
+            return Ok(regions);
         }
 
         [HttpGet("{id}")]
         [AllowAnonymous]
         public async Task<ActionResult<RegionDTO>> Get(int id)
         {
-            try
+            var region = await _regionsService.GetRegion(id);
+            if (region == null)
             {
-                var region = await _regionsService.GetRegion(id);
-                if (region == null)
-                {
-                    return NotFound();
-                }
+                return NotFound();
+            }
 
-                return Ok(region);
-            }
-            catch (Exception)
-            {
-                return StatusCode(500, "An error occurred while processing your request.");
-            }
+            return Ok(region);
         }
 
         [HttpPost]
         [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<RegionDTO>> Post([FromBody] RegionAdd region)
         {
-            try
-            {
-                var added = await _regionsService.AddRegion(region);
-                return CreatedAtAction(nameof(Get), new { id = added.Id }, added);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-            catch (Exception)
-            {
-                return StatusCode(500, "An error occurred while processing your request.");
-            }
+            var added = await _regionsService.AddRegion(region);
+            return CreatedAtAction(nameof(Get), new { id = added.Id }, added);
         }
 
         [HttpPut("{id}")]
         [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<RegionDTO>> Put(int id, [FromBody] RegionUpdate region)
         {
-            try
-            {
-                var updated = await _regionsService.UpdateRegion(id, region);
-                return Ok(updated);
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-            catch (Exception)
-            {
-                return StatusCode(500, "An error occurred while processing your request.");
-            }
+            var updated = await _regionsService.UpdateRegion(id, region);
+            return Ok(updated);
         }
 
         [HttpDelete("{id}")]
         [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> Delete(int id)
         {
-            try
-            {
-                await _regionsService.DeleteRegion(id);
-                return Ok();
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-            catch (Exception)
-            {
-                return StatusCode(500, "An error occurred while processing your request.");
-            }
+            await _regionsService.DeleteRegion(id);
+            return Ok();
         }
     }
 }

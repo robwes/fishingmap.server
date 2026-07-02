@@ -369,3 +369,6 @@ migrate.sql
 
 # Claude Code per-user settings
 .claude/settings.local.json
+# Local Claude Code CLI install at repo root (not project code)
+/package.json
+/package-lock.json

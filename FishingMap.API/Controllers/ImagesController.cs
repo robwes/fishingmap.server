@@ -1,7 +1,5 @@
-﻿using FishingMap.Domain.Interfaces;
+using FishingMap.Domain.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace FishingMap.API.Controllers
 {
@@ -9,6 +7,9 @@ namespace FishingMap.API.Controllers
     [ApiController]
     public class ImagesController : ControllerBase
     {
+        // Only these top-level file share folders hold public images (see AzureFileService.AddFile)
+        private static readonly string[] AllowedFolders = { "locations/", "species/" };
+
         private readonly IFileService _fileService;
 
         public ImagesController(IFileService fileService)
@@ -16,24 +17,24 @@ namespace FishingMap.API.Controllers
             _fileService = fileService;
         }
 
-        // GET api/<ImagesController>/5
+        // GET api/<ImagesController>/locations/5/{file}
         [HttpGet("{*filePath}")]
         public async Task<IActionResult> Get(string filePath)
         {
-            try
+            if (string.IsNullOrEmpty(filePath)
+                || filePath.Contains("..")
+                || !AllowedFolders.Any(folder => filePath.StartsWith(folder, StringComparison.OrdinalIgnoreCase)))
             {
-                var file = await _fileService.GetFile(filePath);
-                if (file == null)
-                {
-                    return NotFound();
-                }
+                return NotFound();
+            }
 
-                return new FileStreamResult(file, file.ContentType);
-            }
-            catch (Exception)
+            var file = await _fileService.GetFile(filePath);
+            if (file == null)
             {
-                return StatusCode(500, "An error occurred while processing your request.");
+                return NotFound();
             }
+
+            return new FileStreamResult(file, file.ContentType);
         }
     }
 }

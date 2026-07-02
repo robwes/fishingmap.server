@@ -5,10 +5,17 @@ namespace FishingMap.Data.Interfaces
     public interface ILocationRepository : IRepository<Location>
     {
         Task<List<Location>> FindLocations(
-            string nameSearch = "", 
-            List<int>? speciesIds = null, 
-            double? radius = null, 
-            double? orgLat = null, 
+            string nameSearch = "",
+            List<int>? speciesIds = null,
+            double? radius = null,
+            double? orgLat = null,
+            double? orgLng = null);
+
+        Task<List<(Location Location, double? DistanceKm)>> FindLocationsWithDistance(
+            string nameSearch = "",
+            List<int>? speciesIds = null,
+            double? radius = null,
+            double? orgLat = null,
             double? orgLng = null);
 
         Task<Location?> GetLocationWithDetails(int id, bool noTracking = false);

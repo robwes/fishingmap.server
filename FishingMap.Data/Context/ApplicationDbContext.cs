@@ -19,6 +19,7 @@ namespace FishingMap.Data.Context
         public virtual DbSet<Region> Regions { get; set; }
         public virtual DbSet<SpeciesRegulation> SpeciesRegulations { get; set; }
         public virtual DbSet<ProtectedPeriod> ProtectedPeriods { get; set; }
+        public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -27,7 +28,11 @@ namespace FishingMap.Data.Context
                 .IsUnique();
 
             modelBuilder.Entity<User>()
-                .HasIndex(u => new { u.UserName, u.Email })
+                .HasIndex(u => u.UserName)
+                .IsUnique();
+
+            modelBuilder.Entity<User>()
+                .HasIndex(u => u.Email)
                 .IsUnique();
 
             modelBuilder.Entity<User>()
@@ -52,6 +57,24 @@ namespace FishingMap.Data.Context
                 .HasIndex(r => r.Type)
                 .IsUnique()
                 .HasFilter("[Type] = 0");
+
+            modelBuilder.Entity<SpeciesRegulation>()
+                .Property(r => r.MinimumSizeCm)
+                .HasPrecision(6, 2);
+
+            modelBuilder.Entity<SpeciesRegulation>()
+                .Property(r => r.MaximumSizeCm)
+                .HasPrecision(6, 2);
+
+            modelBuilder.Entity<RefreshToken>()
+                .HasIndex(t => t.TokenHash)
+                .IsUnique();
+
+            modelBuilder.Entity<RefreshToken>()
+                .HasOne(t => t.User)
+                .WithMany()
+                .HasForeignKey(t => t.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

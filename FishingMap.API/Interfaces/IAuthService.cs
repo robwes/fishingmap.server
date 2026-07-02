@@ -7,5 +7,6 @@ namespace FishingMap.API.Interfaces
         string GenerateToken(UserDTO user);
         Task<UserDTO?> GetCurrentUser(HttpContext httpContext);
         bool ValidateUserPassword(UserCredentials userCredentials, string password);
+        bool ValidateUserPassword(UserCredentials userCredentials, string password, out bool needsRehash);
     }
 }

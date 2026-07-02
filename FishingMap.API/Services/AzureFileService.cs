@@ -31,14 +31,23 @@ namespace FishingMap.API.Services
             // Generate a unique file name for the uploaded file
             string uniqueFileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
 
-            // Upload the file to the final sub-folder
+            // Upload the file to the final sub-folder in ranges of at most 4 MiB
+            // (the Azure Files per-range limit)
+            const int maxRangeSize = 4 * 1024 * 1024;
             ShareFileClient fileClient = directoryClient.GetFileClient(uniqueFileName);
             using (Stream stream = file.OpenReadStream())
             {
                 await fileClient.CreateAsync(file.Length);
-                await fileClient.UploadRangeAsync(
-                    new HttpRange(0, file.Length),
-                    stream);
+
+                var buffer = new byte[maxRangeSize];
+                long offset = 0;
+                int bytesRead;
+                while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                {
+                    using var rangeStream = new MemoryStream(buffer, 0, bytesRead, writable: false);
+                    await fileClient.UploadRangeAsync(new HttpRange(offset, bytesRead), rangeStream);
+                    offset += bytesRead;
+                }
             }
 
             // Return the file path relative to the root directory of the file share
@@ -68,8 +77,8 @@ namespace FishingMap.API.Services
                 return null;
             }
 
-            ShareFileProperties properties = fileClient.GetProperties();
-            ShareFileDownloadInfo download = fileClient.Download();
+            ShareFileProperties properties = await fileClient.GetPropertiesAsync();
+            ShareFileDownloadInfo download = await fileClient.DownloadAsync();
 
             // Return the file as a ContentTypeStream with the appropriate content type
             return new ContentTypeStream(download.Content, properties.ContentType);
@@ -109,7 +118,8 @@ namespace FishingMap.API.Services
             {
                 if (fileItem.IsDirectory)
                 {
-                    await DeleteFolder(fileItem.Name);
+                    // fileItem.Name is bare; the recursive call resolves from the share root
+                    await DeleteFolder($"{folderPath}/{fileItem.Name}");
                 }
                 else
                 {
