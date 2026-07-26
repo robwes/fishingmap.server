@@ -2,6 +2,7 @@
 using FishingMap.Common.Extensions;
 using FishingMap.Data.Entities;
 using FishingMap.Data.Interfaces;
+using FishingMap.Domain.DTO.Images;
 using FishingMap.Domain.DTO.Species;
 using FishingMap.Domain.Interfaces;
 using FishingMap.Domain.Utils;
@@ -117,7 +118,78 @@ namespace FishingMap.Domain.Services
             return _mapper.Map<SpeciesDTO>(entity);
         }
 
-        private async Task AddSpeciesImage(Species species, IFormFile image)
+        public async Task<ImageDTO> AddImageToSpecies(int id, IFormFile image)
+        {
+            var entity = await _unitOfWork.Species.GetSpeciesWithImages(id);
+            if (entity == null)
+            {
+                throw new KeyNotFoundException($"Species with id {id} not found.");
+            }
+
+            var newImage = await AddSpeciesImage(entity, image);
+            await _unitOfWork.SaveChanges();
+            return _mapper.Map<Image, ImageDTO>(newImage);
+        }
+
+        public async Task RemoveImageFromSpecies(int id, int imageId)
+        {
+            var entity = await _unitOfWork.Species.GetSpeciesWithImages(id);
+            if (entity == null)
+            {
+                throw new KeyNotFoundException($"Species with id {id} not found.");
+            }
+
+            var image = entity.Images?.FirstOrDefault(i => i.Id == imageId);
+            if (image == null)
+            {
+                throw new KeyNotFoundException($"Image with id {imageId} not found on species {id}.");
+            }
+
+            await DeleteSpeciesImage(entity, image);
+            await _unitOfWork.SaveChanges();
+        }
+
+        public async Task<SpeciesDTO> UpdateSpeciesInfo(int id, SpeciesInfoPatch patch)
+        {
+            var entity = await _unitOfWork.Species.GetSpeciesWithImages(id);
+            if (entity == null)
+            {
+                throw new KeyNotFoundException($"Species with id {id} not found.");
+            }
+
+            if (patch.Name.HasValue)
+            {
+                if (string.IsNullOrEmpty(patch.Name.Value))
+                {
+                    throw new ArgumentException("Name cannot be empty.");
+                }
+
+                if (entity.Name != patch.Name.Value &&
+                    await _unitOfWork.Species.Any(s => s.Name == patch.Name.Value && s.Id != id))
+                {
+                    throw new ArgumentException($"A species with the name {patch.Name.Value} already exists.");
+                }
+
+                entity.Name = patch.Name.Value;
+            }
+
+            if (patch.ScientificName.HasValue)
+            {
+                entity.ScientificName = string.IsNullOrEmpty(patch.ScientificName.Value) ? null : patch.ScientificName.Value;
+            }
+
+            if (patch.Description.HasValue)
+            {
+                entity.Description = string.IsNullOrEmpty(patch.Description.Value) ? null : patch.Description.Value;
+            }
+
+            entity.Modified = DateTime.UtcNow;
+            await _unitOfWork.SaveChanges();
+
+            return _mapper.Map<SpeciesDTO>(entity);
+        }
+
+        private async Task<Image> AddSpeciesImage(Species species, IFormFile image)
         {
             ImageUpload.Validate(image);
 
@@ -132,13 +204,16 @@ namespace FishingMap.Domain.Services
                 species.Images = new List<Image>();
             }
 
-            species.Images.Add(new Image
+            var newImage = new Image
             {
                 Name = fileName,
                 Path = filePath,
                 Created = DateTime.UtcNow,
                 Modified = DateTime.UtcNow
-            });
+            };
+
+            species.Images.Add(newImage);
+            return newImage;
         }
 
         private async Task DeleteSpeciesImage(Species species, Image image)

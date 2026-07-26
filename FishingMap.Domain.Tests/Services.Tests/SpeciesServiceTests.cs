@@ -3,6 +3,7 @@ using MapsterMapper;
 using FishingMap.Data.Entities;
 using FishingMap.Data.Interfaces;
 using FishingMap.Domain.MapsterConfig;
+using FishingMap.Domain.DTO.Common;
 using FishingMap.Domain.DTO.Species;
 using FishingMap.Domain.Interfaces;
 using FishingMap.Domain.Services;
@@ -373,6 +374,188 @@ namespace FishingMap.Domain.Tests.Services.Tests
             _unitOfWorkMock.Verify(u => u.Images.Delete(It.IsAny<Image>()), Times.Once); // Verify that one image was deleted
             _unitOfWorkMock.Verify(u => u.SaveChanges(), Times.Once);
             _fileServiceMock.Verify(f => f.DeleteFile(It.IsAny<string>()), Times.Once); // Verify that one image filewas deleted
+        }
+
+        [Fact]
+        public async Task UpdateSpeciesInfo_ShouldUpdateFieldsAndPreserveImages_WhenSpeciesIsFound()
+        {
+            // Arrange
+            var speciesId = 1;
+            var patch = new SpeciesInfoPatch
+            {
+                Name = Optional<string>.Of("Updated Species"),
+                ScientificName = Optional<string?>.Of("Esox lucius"),
+                Description = Optional<string?>.Of("Updated Description")
+            };
+
+            var species = new Species
+            {
+                Id = speciesId,
+                Name = "Test Species",
+                Description = "Test Description",
+                Images = new List<Image> { new Image { Name = "image.jpg", Path = "path/to/species/1/image.jpg" } }
+            };
+
+            _unitOfWorkMock.Setup(u => u.Species.GetSpeciesWithImages(speciesId, false))
+                .ReturnsAsync(species);
+
+            // Act
+            var result = await _speciesService.UpdateSpeciesInfo(speciesId, patch);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("Updated Species", result.Name);
+            Assert.Equal("Esox lucius", result.ScientificName);
+            Assert.Equal("Updated Description", result.Description);
+            Assert.Single(result.Images); // Images must be preserved, not wiped
+            _unitOfWorkMock.Verify(u => u.Images.Delete(It.IsAny<Image>()), Times.Never);
+            _fileServiceMock.Verify(f => f.DeleteFile(It.IsAny<string>()), Times.Never);
+            _unitOfWorkMock.Verify(u => u.SaveChanges(), Times.Once);
+        }
+
+        [Fact]
+        public async Task UpdateSpeciesInfo_ShouldNotOverwriteFields_WhenPatchValuesAreAbsent()
+        {
+            // Arrange
+            var speciesId = 1;
+            var patch = new SpeciesInfoPatch(); // no Optional has a value
+
+            var species = new Species
+            {
+                Id = speciesId,
+                Name = "Test Species",
+                ScientificName = "Esox lucius",
+                Description = "Test Description",
+                Images = new List<Image> { new Image { Name = "image.jpg", Path = "path/to/species/1/image.jpg" } }
+            };
+
+            _unitOfWorkMock.Setup(u => u.Species.GetSpeciesWithImages(speciesId, false))
+                .ReturnsAsync(species);
+
+            // Act
+            var result = await _speciesService.UpdateSpeciesInfo(speciesId, patch);
+
+            // Assert
+            Assert.Equal("Test Species", result.Name);
+            Assert.Equal("Esox lucius", result.ScientificName);
+            Assert.Equal("Test Description", result.Description);
+            Assert.Single(result.Images);
+        }
+
+        [Fact]
+        public async Task UpdateSpeciesInfo_ShouldThrowKeyNotFoundException_WhenSpeciesDoesNotExist()
+        {
+            // Arrange
+            var speciesId = 1;
+            _unitOfWorkMock.Setup(u => u.Species.GetSpeciesWithImages(speciesId, false))
+                .ReturnsAsync((Species?)null);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _speciesService.UpdateSpeciesInfo(speciesId, new SpeciesInfoPatch()));
+        }
+
+        [Fact]
+        public async Task UpdateSpeciesInfo_ShouldThrowArgumentException_WhenNameIsTakenByAnotherSpecies()
+        {
+            // Arrange
+            var speciesId = 1;
+            var patch = new SpeciesInfoPatch { Name = Optional<string>.Of("Taken") };
+
+            var species = new Species { Id = speciesId, Name = "Original", Images = new List<Image>() };
+            _unitOfWorkMock.Setup(u => u.Species.GetSpeciesWithImages(speciesId, false))
+                .ReturnsAsync(species);
+            _unitOfWorkMock.Setup(u => u.Species.Any(It.IsAny<System.Linq.Expressions.Expression<Func<Species, bool>>>()))
+                .ReturnsAsync(true);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(
+                () => _speciesService.UpdateSpeciesInfo(speciesId, patch));
+        }
+
+        [Fact]
+        public async Task AddImageToSpecies_ShouldAddImageAndReturnDto_WhenSpeciesIsFound()
+        {
+            // Arrange
+            var speciesId = 1;
+            var image = CreateTestImage("image.jpg");
+            var species = new Species
+            {
+                Id = speciesId,
+                Name = "Test Species",
+                Images = new List<Image>()
+            };
+
+            _unitOfWorkMock.Setup(u => u.Species.GetSpeciesWithImages(speciesId, false))
+                .ReturnsAsync(species);
+            _fileServiceMock.Setup(f => f.AddFile(It.IsAny<IFormFile>(), It.IsAny<string>()))
+                .ReturnsAsync("path/to/species/1/image.jpg");
+
+            // Act
+            var result = await _speciesService.AddImageToSpecies(speciesId, image);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("image.jpg", result.Name);
+            Assert.Equal("path/to/species/1/image.jpg", result.Path);
+            Assert.Single(species.Images);
+            _fileServiceMock.Verify(f => f.AddFile(It.IsAny<IFormFile>(), It.IsAny<string>()), Times.Once);
+            _unitOfWorkMock.Verify(u => u.SaveChanges(), Times.Once);
+        }
+
+        [Fact]
+        public async Task AddImageToSpecies_ShouldThrowKeyNotFoundException_WhenSpeciesDoesNotExist()
+        {
+            // Arrange
+            var speciesId = 1;
+            _unitOfWorkMock.Setup(u => u.Species.GetSpeciesWithImages(speciesId, false))
+                .ReturnsAsync((Species?)null);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _speciesService.AddImageToSpecies(speciesId, CreateTestImage("image.jpg")));
+        }
+
+        [Fact]
+        public async Task RemoveImageFromSpecies_ShouldDeleteImage_WhenImageExists()
+        {
+            // Arrange
+            var speciesId = 1;
+            var imageId = 5;
+            var image = new Image { Id = imageId, Name = "image.jpg", Path = "path/to/species/1/image.jpg" };
+            var species = new Species
+            {
+                Id = speciesId,
+                Name = "Test Species",
+                Images = new List<Image> { image }
+            };
+
+            _unitOfWorkMock.Setup(u => u.Species.GetSpeciesWithImages(speciesId, false))
+                .ReturnsAsync(species);
+
+            // Act
+            await _speciesService.RemoveImageFromSpecies(speciesId, imageId);
+
+            // Assert
+            Assert.Empty(species.Images);
+            _unitOfWorkMock.Verify(u => u.Images.Delete(It.Is<Image>(i => i.Id == imageId)), Times.Once);
+            _fileServiceMock.Verify(f => f.DeleteFile("path/to/species/1/image.jpg"), Times.Once);
+            _unitOfWorkMock.Verify(u => u.SaveChanges(), Times.Once);
+        }
+
+        [Fact]
+        public async Task RemoveImageFromSpecies_ShouldThrowKeyNotFoundException_WhenImageNotOnSpecies()
+        {
+            // Arrange
+            var speciesId = 1;
+            var species = new Species { Id = speciesId, Name = "Test Species", Images = new List<Image>() };
+            _unitOfWorkMock.Setup(u => u.Species.GetSpeciesWithImages(speciesId, false))
+                .ReturnsAsync(species);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _speciesService.RemoveImageFromSpecies(speciesId, 999));
+            _fileServiceMock.Verify(f => f.DeleteFile(It.IsAny<string>()), Times.Never);
         }
 
     }

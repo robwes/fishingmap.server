@@ -1,3 +1,4 @@
+using FishingMap.Domain.DTO.Images;
 using FishingMap.Domain.DTO.Species;
 using FishingMap.Domain.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -63,6 +64,31 @@ namespace FishingMap.API.Controllers
         {
             await _speciesService.DeleteSpecies(id);
             return Ok();
+        }
+
+        [HttpPatch("{id}/info")]
+        [Authorize(Roles = "Administrator")]
+        public async Task<ActionResult<SpeciesDTO>> PatchInfo(int id, [FromBody] SpeciesInfoPatch patch)
+        {
+            var species = await _speciesService.UpdateSpeciesInfo(id, patch);
+            return Ok(species);
+        }
+
+        [HttpPost("{id}/images")]
+        [Authorize(Roles = "Administrator")]
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult<ImageDTO>> PostImage(int id, [FromForm] IFormFile image)
+        {
+            var imageDto = await _speciesService.AddImageToSpecies(id, image);
+            return CreatedAtAction(nameof(Get), new { id }, imageDto);
+        }
+
+        [HttpDelete("{id}/images/{imageId}")]
+        [Authorize(Roles = "Administrator")]
+        public async Task<IActionResult> DeleteImage(int id, int imageId)
+        {
+            await _speciesService.RemoveImageFromSpecies(id, imageId);
+            return NoContent();
         }
     }
 }
