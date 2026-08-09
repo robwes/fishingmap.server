@@ -1,19 +1,23 @@
 using FishingMap.Data.Entities;
+using FishingMap.Domain.DTO.Locations;
+using FishingMap.Domain.DTO.Regions;
 using FishingMap.Domain.DTO.Species;
-using System.ComponentModel.DataAnnotations;
 
 namespace FishingMap.Domain.DTO.Regulations
 {
-    public class SpeciesRegulationUpdate
+    // One regulation for a species, carrying the NAMES of whatever it is scoped to.
+    // SpeciesRegulationDTO only exposes ids, which would force the species details screen to
+    // fetch every region and location just to render a label.
+    //
+    // Scope is XOR, same as the entity: either Region is set and Locations is empty, or
+    // Locations is non-empty and Region is null.
+    public class SpeciesRegulationScopeDTO
     {
-        [Required]
         public int Id { get; set; }
-
-        [Required]
         public int SpeciesId { get; set; }
 
-        public int? RegionId { get; set; }
-        public IEnumerable<int> LocationIds { get; set; } = new List<int>();
+        public RegionDTO? Region { get; set; }
+        public IEnumerable<LocationIdName> Locations { get; set; } = new List<LocationIdName>();
 
         public decimal? MinimumSizeCm { get; set; }
         public decimal? MaximumSizeCm { get; set; }
@@ -21,8 +25,6 @@ namespace FishingMap.Domain.DTO.Regulations
         public BagLimitBasis? BagLimitBasis { get; set; }
         public bool IsCatchAndReleaseOnly { get; set; }
         public bool MustReportCatch { get; set; }
-
-        [StringLength(5000)]
         public string? AdditionalRules { get; set; }
 
         public IEnumerable<ProtectedPeriodDTO> ProtectedPeriods { get; set; } = new List<ProtectedPeriodDTO>();

@@ -328,5 +328,156 @@ namespace FishingMap.Domain.Tests.Services.Tests
             _regionsRepoMock.Verify(r => r.GetNationalRegionId(), Times.Once);
             _regionsRepoMock.Verify(r => r.GetAncestry(It.IsAny<int>()), Times.Never);
         }
+
+        [Fact]
+        public async Task GetEffectiveRulesForLocation_ShouldCarryRegulationIdAndLocationIds()
+        {
+            // The location editor saves against RegulationId and uses LocationIds to detect a
+            // rule shared with other waters. Neither is derivable from the rest of the payload.
+            var location = new Location { Id = 5, RegionId = null };
+            var otherWater = new Location { Id = 7 };
+            _locationsRepoMock.Setup(l => l.GetById(5, null, true)).ReturnsAsync(location);
+            _regionsRepoMock.Setup(r => r.GetNationalRegionId()).ReturnsAsync(1);
+
+            var shared = new SpeciesRegulation
+            {
+                Id = 42,
+                SpeciesId = 100,
+                Locations = new List<Location> { location, otherWater },
+                MinimumSizeCm = 50
+            };
+
+            _regulationsRepoMock.Setup(r => r.GetCandidatesForLocation(5, It.IsAny<IEnumerable<int>>()))
+                .ReturnsAsync(new List<SpeciesRegulation> { shared });
+
+            var rules = (await _service.GetEffectiveRulesForLocation(5)).ToList();
+
+            Assert.Single(rules);
+            Assert.Equal(42, rules[0].RegulationId);
+            Assert.Equal(new[] { 5, 7 }, rules[0].LocationIds);
+        }
+
+        [Fact]
+        public async Task GetEffectiveRulesForLocation_ShouldExposeWhatTheWinnerShadows()
+        {
+            var location = new Location { Id = 5, RegionId = 20 };
+            _locationsRepoMock.Setup(l => l.GetById(5, null, true)).ReturnsAsync(location);
+            _regionsRepoMock.Setup(r => r.GetAncestry(20)).ReturnsAsync(new List<Region>
+            {
+                new() { Id = 20, Name = "Ely", Type = RegionType.Ely, ParentRegionId = 1 },
+                new() { Id = 1, Name = "Finland", Type = RegionType.National }
+            });
+
+            var nationalRule = new SpeciesRegulation
+            {
+                Id = 1,
+                SpeciesId = 100,
+                RegionId = 1,
+                Region = new Region { Id = 1, Type = RegionType.National, Name = "Finland" },
+                MinimumSizeCm = 20
+            };
+            var locScoped = new SpeciesRegulation
+            {
+                Id = 2,
+                SpeciesId = 100,
+                Locations = new List<Location> { location },
+                MinimumSizeCm = 60
+            };
+
+            _regulationsRepoMock.Setup(r => r.GetCandidatesForLocation(5, It.IsAny<IEnumerable<int>>()))
+                .ReturnsAsync(new List<SpeciesRegulation> { nationalRule, locScoped });
+
+            var rules = (await _service.GetEffectiveRulesForLocation(5)).ToList();
+
+            var rule = Assert.Single(rules);
+            Assert.Equal("Location", rule.Source);
+            Assert.Equal(60, rule.MinimumSizeCm);
+
+            // Removing the local override would reveal the national rule — the editor says so.
+            Assert.NotNull(rule.FallsBackTo);
+            Assert.Equal("National", rule.FallsBackTo!.Source);
+            Assert.Equal(20, rule.FallsBackTo.MinimumSizeCm);
+            // Only one level deep, so the nested rule doesn't recurse.
+            Assert.Null(rule.FallsBackTo.FallsBackTo);
+        }
+
+        [Fact]
+        public async Task GetEffectiveRulesForLocation_ShouldLeaveFallbackNull_WhenNothingElseCovers()
+        {
+            var location = new Location { Id = 5, RegionId = null };
+            _locationsRepoMock.Setup(l => l.GetById(5, null, true)).ReturnsAsync(location);
+            _regionsRepoMock.Setup(r => r.GetNationalRegionId()).ReturnsAsync(1);
+
+            var only = new SpeciesRegulation
+            {
+                Id = 1,
+                SpeciesId = 100,
+                RegionId = 1,
+                Region = new Region { Id = 1, Type = RegionType.National, Name = "Finland" }
+            };
+
+            _regulationsRepoMock.Setup(r => r.GetCandidatesForLocation(5, It.IsAny<IEnumerable<int>>()))
+                .ReturnsAsync(new List<SpeciesRegulation> { only });
+
+            var rules = (await _service.GetEffectiveRulesForLocation(5)).ToList();
+
+            Assert.Null(rules[0].FallsBackTo);
+        }
+
+        [Fact]
+        public async Task GetRegulationsForSpecies_ShouldThrow_WhenSpeciesMissing()
+        {
+            _speciesRepoMock.Setup(s => s.Any(It.IsAny<Expression<Func<Species, bool>>>())).ReturnsAsync(false);
+
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _service.GetRegulationsForSpecies(99));
+        }
+
+        [Fact]
+        public async Task GetRegulationsForSpecies_ShouldReturnNamesAndOrderNationalFirst()
+        {
+            _speciesRepoMock.Setup(s => s.Any(It.IsAny<Expression<Func<Species, bool>>>())).ReturnsAsync(true);
+
+            var locationRule = new SpeciesRegulation
+            {
+                Id = 3,
+                SpeciesId = 100,
+                Locations = new List<Location> { new() { Id = 7, Name = "Kalajärvi" } },
+                BagLimit = 4,
+                BagLimitBasis = BagLimitBasis.Permit
+            };
+            var elyRule = new SpeciesRegulation
+            {
+                Id = 2,
+                SpeciesId = 100,
+                RegionId = 20,
+                Region = new Region { Id = 20, Name = "Uusimaa ELY", Type = RegionType.Ely }
+            };
+            var nationalRule = new SpeciesRegulation
+            {
+                Id = 1,
+                SpeciesId = 100,
+                RegionId = 1,
+                Region = new Region { Id = 1, Name = "Finland", Type = RegionType.National }
+            };
+
+            _regulationsRepoMock.Setup(r => r.GetForSpecies(100))
+                .ReturnsAsync(new List<SpeciesRegulation> { locationRule, elyRule, nationalRule });
+
+            var result = (await _service.GetRegulationsForSpecies(100)).ToList();
+
+            Assert.Equal(3, result.Count);
+
+            // National, then the rest of the tree, then location-scoped rules.
+            Assert.Equal("Finland", result[0].Region!.Name);
+            Assert.Equal(RegionType.National, result[0].Region!.Type);
+            Assert.Equal("Uusimaa ELY", result[1].Region!.Name);
+
+            // The whole point of this endpoint: names, not just ids.
+            Assert.Null(result[2].Region);
+            var water = Assert.Single(result[2].Locations);
+            Assert.Equal(7, water.Id);
+            Assert.Equal("Kalajärvi", water.Name);
+            Assert.Equal(BagLimitBasis.Permit, result[2].BagLimitBasis);
+        }
     }
 }

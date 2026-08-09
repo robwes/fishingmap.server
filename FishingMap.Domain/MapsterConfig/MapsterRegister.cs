@@ -25,9 +25,16 @@ namespace FishingMap.Domain.MapsterConfig
             config.NewConfig<SpeciesRegulation, SpeciesRegulationDTO>()
                 .Map(dest => dest.LocationIds, src => src.Locations.Select(l => l.Id));
 
-            // Source depends on the requesting locationId, so it's set by the service after mapping.
+            config.NewConfig<SpeciesRegulation, SpeciesRegulationScopeDTO>()
+                .Map(dest => dest.Locations, src => src.Locations);
+
+            // Source and FallsBackTo depend on the requesting locationId and on the other
+            // candidates, so the service sets both after mapping.
             config.NewConfig<SpeciesRegulation, LocationSpeciesRuleDTO>()
-                .Ignore(dest => dest.Source);
+                .Map(dest => dest.RegulationId, src => src.Id)
+                .Map(dest => dest.LocationIds, src => src.Locations.Select(l => l.Id))
+                .Ignore(dest => dest.Source)
+                .Ignore(dest => dest.FallsBackTo!);
         }
     }
 }

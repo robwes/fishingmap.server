@@ -52,6 +52,7 @@ namespace FishingMap.Domain.Services
                 MinimumSizeCm = input.MinimumSizeCm,
                 MaximumSizeCm = input.MaximumSizeCm,
                 BagLimit = input.BagLimit,
+                BagLimitBasis = input.BagLimitBasis,
                 IsCatchAndReleaseOnly = input.IsCatchAndReleaseOnly,
                 MustReportCatch = input.MustReportCatch,
                 AdditionalRules = input.AdditionalRules,
@@ -93,6 +94,7 @@ namespace FishingMap.Domain.Services
             entity.MinimumSizeCm = input.MinimumSizeCm;
             entity.MaximumSizeCm = input.MaximumSizeCm;
             entity.BagLimit = input.BagLimit;
+            entity.BagLimitBasis = input.BagLimitBasis;
             entity.IsCatchAndReleaseOnly = input.IsCatchAndReleaseOnly;
             entity.MustReportCatch = input.MustReportCatch;
             entity.AdditionalRules = input.AdditionalRules;
@@ -147,13 +149,43 @@ namespace FishingMap.Domain.Services
 
             return candidates
                 .GroupBy(r => r.SpeciesId)
-                .Select(g => g.OrderBy(Rank).First())
-                .Select(r =>
+                .Select(g =>
                 {
-                    var dto = _mapper.Map<LocationSpeciesRuleDTO>(r);
-                    dto.Source = ResolveSource(r, locationId);
+                    // Rank ascending = most specific first. The winner is the rule that
+                    // applies; the runner-up is what a maintainer would fall back to if the
+                    // winner were removed, which the editor needs in order to say so.
+                    var ordered = g.OrderBy(Rank).ToList();
+                    var dto = ToRule(ordered[0], locationId);
+                    dto.FallsBackTo = ordered.Count > 1 ? ToRule(ordered[1], locationId) : null;
                     return dto;
                 })
+                .ToList();
+        }
+
+        private LocationSpeciesRuleDTO ToRule(SpeciesRegulation regulation, int locationId)
+        {
+            var dto = _mapper.Map<LocationSpeciesRuleDTO>(regulation);
+            dto.Source = ResolveSource(regulation, locationId);
+            return dto;
+        }
+
+        public async Task<IEnumerable<SpeciesRegulationScopeDTO>> GetRegulationsForSpecies(int speciesId)
+        {
+            if (!await _unitOfWork.Species.Any(s => s.Id == speciesId))
+            {
+                throw new KeyNotFoundException($"Species with id {speciesId} not found.");
+            }
+
+            var regulations = await _unitOfWork.SpeciesRegulations.GetForSpecies(speciesId);
+
+            // National first, then the rest of the tree by tier and name, then the
+            // location-scoped rules — the order the species details screen reads them in.
+            return regulations
+                .Select(r => _mapper.Map<SpeciesRegulationScopeDTO>(r))
+                .OrderBy(r => r.Region == null ? 1 : 0)
+                .ThenBy(r => r.Region == null ? 0 : (int)r.Region.Type)
+                .ThenBy(r => r.Region?.Name ?? string.Empty)
+                .ThenBy(r => r.Locations.Select(l => l.Name).FirstOrDefault() ?? string.Empty)
                 .ToList();
         }
 

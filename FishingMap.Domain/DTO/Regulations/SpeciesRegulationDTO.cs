@@ -1,3 +1,4 @@
+using FishingMap.Data.Entities;
 using FishingMap.Domain.DTO.Species;
 
 namespace FishingMap.Domain.DTO.Regulations
@@ -13,6 +14,7 @@ namespace FishingMap.Domain.DTO.Regulations
         public decimal? MinimumSizeCm { get; set; }
         public decimal? MaximumSizeCm { get; set; }
         public int? BagLimit { get; set; }
+        public BagLimitBasis? BagLimitBasis { get; set; }
         public bool IsCatchAndReleaseOnly { get; set; }
         public bool MustReportCatch { get; set; }
         public string? AdditionalRules { get; set; }

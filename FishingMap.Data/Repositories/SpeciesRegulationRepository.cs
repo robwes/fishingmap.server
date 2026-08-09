@@ -26,5 +26,17 @@ namespace FishingMap.Data.Repositories
                     || (r.RegionId.HasValue && ancestorIds.Contains(r.RegionId.Value)))
                 .ToListAsync();
         }
+
+        public async Task<IReadOnlyList<SpeciesRegulation>> GetForSpecies(int speciesId)
+        {
+            return await _context.SpeciesRegulations
+                .AsNoTracking()
+                .Include(r => r.Locations)
+                .Include(r => r.ProtectedPeriods)
+                .Include(r => r.Region)
+                .AsSplitQuery()
+                .Where(r => r.SpeciesId == speciesId)
+                .ToListAsync();
+        }
     }
 }

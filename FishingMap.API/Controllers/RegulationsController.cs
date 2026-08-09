@@ -46,6 +46,16 @@ namespace FishingMap.API.Controllers
             return Ok(rules);
         }
 
+        // Mirrors location/{locationId} rather than living under SpeciesController, so both
+        // scope-shaped lookups sit next to each other on the resource they return.
+        [HttpGet("species/{speciesId}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<IEnumerable<SpeciesRegulationScopeDTO>>> GetForSpecies(int speciesId)
+        {
+            var regulations = await _regulationsService.GetRegulationsForSpecies(speciesId);
+            return Ok(regulations);
+        }
+
         [HttpPost]
         [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<SpeciesRegulationDTO>> Post([FromBody] SpeciesRegulationAdd regulation)

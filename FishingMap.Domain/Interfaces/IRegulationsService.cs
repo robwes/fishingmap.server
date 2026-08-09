@@ -12,5 +12,6 @@ namespace FishingMap.Domain.Interfaces
         Task DeleteRegulation(int id);
 
         Task<IEnumerable<LocationSpeciesRuleDTO>> GetEffectiveRulesForLocation(int locationId);
+        Task<IEnumerable<SpeciesRegulationScopeDTO>> GetRegulationsForSpecies(int speciesId);
     }
 }

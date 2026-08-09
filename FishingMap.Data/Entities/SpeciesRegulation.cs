@@ -21,6 +21,11 @@ namespace FishingMap.Data.Entities
         public decimal? MinimumSizeCm { get; set; }
         public decimal? MaximumSizeCm { get; set; }
         public int? BagLimit { get; set; }
+
+        // What BagLimit is counted against. Null means the source rule doesn't say —
+        // clients must not default it to "per day".
+        public BagLimitBasis? BagLimitBasis { get; set; }
+
         public bool IsCatchAndReleaseOnly { get; set; }
 
         public bool MustReportCatch { get; set; }
