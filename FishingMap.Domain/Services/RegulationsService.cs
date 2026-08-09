@@ -38,6 +38,7 @@ namespace FishingMap.Domain.Services
         public async Task<SpeciesRegulationDTO> AddRegulation(SpeciesRegulationAdd input)
         {
             await ValidateScope(input.RegionId, input.LocationIds, currentRegulationId: null, input.SpeciesId);
+            ValidateProtectedPeriods(input.ProtectedPeriods);
 
             if (!await _unitOfWork.Species.Any(s => s.Id == input.SpeciesId))
             {
@@ -88,6 +89,7 @@ namespace FishingMap.Domain.Services
             }
 
             await ValidateScope(input.RegionId, input.LocationIds, currentRegulationId: id, input.SpeciesId);
+            ValidateProtectedPeriods(input.ProtectedPeriods);
 
             entity.SpeciesId = input.SpeciesId;
             entity.RegionId = input.RegionId;
@@ -214,6 +216,42 @@ namespace FishingMap.Domain.Services
 
             var nationalId = await _unitOfWork.Regions.GetNationalRegionId();
             return new List<int> { nationalId };
+        }
+
+        // Days per month for validating protected periods. February is 29:
+        // periods carry no year, so "end of February" has to be expressible,
+        // and periods are compared as month/day ordinals rather than as dates.
+        private static readonly int[] DaysInMonth = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+        /// <summary>
+        /// Rejects a period naming a day its month doesn't have. The per-property
+        /// [Range(1, 31)] on ProtectedPeriodDTO passes 31 February quite happily.
+        ///
+        /// A start after its end is NOT invalid — that is a period wrapping past
+        /// new year, which is how most winter closures are expressed.
+        /// </summary>
+        private static void ValidateProtectedPeriods(IEnumerable<ProtectedPeriodDTO> periods)
+        {
+            foreach (var period in periods ?? [])
+            {
+                ValidateDayOfMonth(period.StartMonth, period.StartDay, "start");
+                ValidateDayOfMonth(period.EndMonth, period.EndDay, "end");
+            }
+        }
+
+        private static void ValidateDayOfMonth(int month, int day, string which)
+        {
+            if (month < 1 || month > 12)
+            {
+                throw new ArgumentException($"Protected period {which} month must be between 1 and 12.");
+            }
+
+            var lastDay = DaysInMonth[month - 1];
+            if (day < 1 || day > lastDay)
+            {
+                throw new ArgumentException(
+                    $"Protected period {which} day {day} is not a valid day of month {month} (1-{lastDay}).");
+            }
         }
 
         private async Task ValidateScope(int? regionId, IEnumerable<int> locationIds, int? currentRegulationId, int speciesId)

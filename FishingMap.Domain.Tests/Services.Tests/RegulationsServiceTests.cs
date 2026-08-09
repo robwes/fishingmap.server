@@ -424,6 +424,105 @@ namespace FishingMap.Domain.Tests.Services.Tests
             Assert.Null(rules[0].FallsBackTo);
         }
 
+        [Theory]
+        [InlineData(2, 30)]  // February has 29 at most
+        [InlineData(2, 31)]
+        [InlineData(4, 31)]  // 30-day months
+        [InlineData(6, 31)]
+        [InlineData(9, 31)]
+        [InlineData(11, 31)]
+        public async Task AddRegulation_ShouldThrow_WhenPeriodNamesADayItsMonthDoesNotHave(int month, int day)
+        {
+            // Scope is validated first, so the region has to exist for the
+            // period check to be the thing that fails.
+            _regionsRepoMock.Setup(r => r.Any(It.IsAny<Expression<Func<Region, bool>>>())).ReturnsAsync(true);
+
+            // [Range(1, 31)] on the DTO passes 31 February quite happily.
+            var add = new SpeciesRegulationAdd
+            {
+                SpeciesId = 1,
+                RegionId = 1,
+                ProtectedPeriods = [new ProtectedPeriodDTO
+                {
+                    StartMonth = month, StartDay = day, EndMonth = 12, EndDay = 31
+                }]
+            };
+
+            var ex = await Assert.ThrowsAsync<ArgumentException>(() => _service.AddRegulation(add));
+            Assert.Contains("not a valid day of month", ex.Message);
+        }
+
+        [Fact]
+        public async Task AddRegulation_ShouldAcceptTheEndOfFebruary()
+        {
+            // Periods carry no year, so "end of February" has to be expressible.
+            _regionsRepoMock.Setup(r => r.Any(It.IsAny<Expression<Func<Region, bool>>>())).ReturnsAsync(true);
+            _speciesRepoMock.Setup(s => s.Any(It.IsAny<Expression<Func<Species, bool>>>())).ReturnsAsync(true);
+            _regulationsRepoMock.Setup(r => r.Add(It.IsAny<SpeciesRegulation>()))
+                .Returns((SpeciesRegulation r) => r);
+
+            var add = new SpeciesRegulationAdd
+            {
+                SpeciesId = 1,
+                RegionId = 1,
+                ProtectedPeriods = [new ProtectedPeriodDTO
+                {
+                    StartMonth = 1, StartDay = 1, EndMonth = 2, EndDay = 29
+                }]
+            };
+
+            var result = await _service.AddRegulation(add);
+
+            Assert.NotNull(result);
+        }
+
+        [Fact]
+        public async Task AddRegulation_ShouldAcceptAPeriodThatWrapsPastNewYear()
+        {
+            // A start after its end is a winter closure, not invalid input.
+            _regionsRepoMock.Setup(r => r.Any(It.IsAny<Expression<Func<Region, bool>>>())).ReturnsAsync(true);
+            _speciesRepoMock.Setup(s => s.Any(It.IsAny<Expression<Func<Species, bool>>>())).ReturnsAsync(true);
+            _regulationsRepoMock.Setup(r => r.Add(It.IsAny<SpeciesRegulation>()))
+                .Returns((SpeciesRegulation r) => r);
+
+            var add = new SpeciesRegulationAdd
+            {
+                SpeciesId = 1,
+                RegionId = 1,
+                ProtectedPeriods = [new ProtectedPeriodDTO
+                {
+                    StartMonth = 12, StartDay = 1, EndMonth = 1, EndDay = 31
+                }]
+            };
+
+            var result = await _service.AddRegulation(add);
+
+            Assert.NotNull(result);
+        }
+
+        [Fact]
+        public async Task UpdateRegulation_ShouldThrow_WhenPeriodNamesAnImpossibleDay()
+        {
+            _regulationsRepoMock
+                .Setup(r => r.GetById(5, It.IsAny<System.Linq.Expressions.Expression<Func<SpeciesRegulation, object>>[]>(), false))
+                .ReturnsAsync(new SpeciesRegulation { Id = 5, SpeciesId = 1 });
+            _regionsRepoMock.Setup(r => r.Any(It.IsAny<Expression<Func<Region, bool>>>())).ReturnsAsync(true);
+
+            var update = new SpeciesRegulationUpdate
+            {
+                Id = 5,
+                SpeciesId = 1,
+                RegionId = 1,
+                ProtectedPeriods = [new ProtectedPeriodDTO
+                {
+                    StartMonth = 4, StartDay = 31, EndMonth = 5, EndDay = 1
+                }]
+            };
+
+            var ex = await Assert.ThrowsAsync<ArgumentException>(() => _service.UpdateRegulation(5, update));
+            Assert.Contains("not a valid day of month", ex.Message);
+        }
+
         [Fact]
         public async Task GetRegulationsForSpecies_ShouldThrow_WhenSpeciesMissing()
         {
