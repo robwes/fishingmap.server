@@ -7,6 +7,14 @@ on:
   push:
     branches:
       - master
+    # Docs and agent config never reach the build output, so a push touching
+    # only those would otherwise rebuild and redeploy byte-identical code.
+    # The filter looks at the whole push: a commit mixing docs with source
+    # still deploys. `.github/workflows/**` is deliberately NOT ignored — a
+    # change to this file should exercise it.
+    paths-ignore:
+      - '**/*.md'
+      - '.claude/**'
   workflow_dispatch:
 
 env:
