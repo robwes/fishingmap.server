@@ -9,6 +9,12 @@ namespace FishingMap.Domain.DTO.Locations
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
+
+        // Which region this water belongs to, so callers can group or filter by
+        // region without pulling full LocationDTOs — those carry the geometry,
+        // and the region admin screen would otherwise load every polygon in the
+        // database just to list the waters a region covers.
+        public int? RegionId { get; set; }
         public GeoPoint Position { get; set; } = new GeoPoint();
         public double? Distance { get; set; }
         public IEnumerable<SpeciesIdName> Species { get; set; } = new List<SpeciesIdName>();
