@@ -37,7 +37,7 @@ namespace FishingMap.Domain.Services
 
         public async Task<SpeciesRegulationDTO> AddRegulation(SpeciesRegulationAdd input)
         {
-            await ValidateScope(input.RegionId, input.LocationIds, currentRegulationId: null, input.SpeciesId);
+            await ValidateScope(input.RegionId, input.LocationIds, currentRegulationId: null, input.SpeciesId, input.AdiposeFin);
             ValidateProtectedPeriods(input.ProtectedPeriods);
 
             if (!await _unitOfWork.Species.Any(s => s.Id == input.SpeciesId))
@@ -50,11 +50,13 @@ namespace FishingMap.Domain.Services
             {
                 SpeciesId = input.SpeciesId,
                 RegionId = input.RegionId,
+                AdiposeFin = input.AdiposeFin,
                 MinimumSizeCm = input.MinimumSizeCm,
                 MaximumSizeCm = input.MaximumSizeCm,
                 BagLimit = input.BagLimit,
                 BagLimitBasis = input.BagLimitBasis,
                 IsCatchAndReleaseOnly = input.IsCatchAndReleaseOnly,
+                IsFullyProtected = input.IsFullyProtected,
                 MustReportCatch = input.MustReportCatch,
                 AdditionalRules = input.AdditionalRules,
                 Created = now,
@@ -88,16 +90,18 @@ namespace FishingMap.Domain.Services
                 throw new KeyNotFoundException($"Regulation with id {id} not found.");
             }
 
-            await ValidateScope(input.RegionId, input.LocationIds, currentRegulationId: id, input.SpeciesId);
+            await ValidateScope(input.RegionId, input.LocationIds, currentRegulationId: id, input.SpeciesId, input.AdiposeFin);
             ValidateProtectedPeriods(input.ProtectedPeriods);
 
             entity.SpeciesId = input.SpeciesId;
             entity.RegionId = input.RegionId;
+            entity.AdiposeFin = input.AdiposeFin;
             entity.MinimumSizeCm = input.MinimumSizeCm;
             entity.MaximumSizeCm = input.MaximumSizeCm;
             entity.BagLimit = input.BagLimit;
             entity.BagLimitBasis = input.BagLimitBasis;
             entity.IsCatchAndReleaseOnly = input.IsCatchAndReleaseOnly;
+            entity.IsFullyProtected = input.IsFullyProtected;
             entity.MustReportCatch = input.MustReportCatch;
             entity.AdditionalRules = input.AdditionalRules;
             entity.Modified = DateTime.UtcNow;
@@ -149,25 +153,90 @@ namespace FishingMap.Domain.Services
                 r.Locations.Any(l => l.Id == locationId) ? 0
                 : 1 + ancestorIds.IndexOf(r.RegionId!.Value);
 
-            return candidates
-                .GroupBy(r => r.SpeciesId)
-                .Select(g =>
-                {
-                    // Rank ascending = most specific first. The winner is the rule that
-                    // applies; the runner-up is what a maintainer would fall back to if the
-                    // winner were removed, which the editor needs in order to say so.
-                    var ordered = g.OrderBy(Rank).ToList();
-                    var dto = ToRule(ordered[0], locationId);
-                    dto.FallsBackTo = ordered.Count > 1 ? ToRule(ordered[1], locationId) : null;
-                    return dto;
-                })
-                .ToList();
+            var rules = new List<LocationSpeciesRuleDTO>();
+
+            foreach (var speciesGroup in candidates.GroupBy(r => r.SpeciesId))
+            {
+                rules.AddRange(ResolveSpecies(speciesGroup, locationId, Rank));
+            }
+
+            return rules;
         }
 
-        private LocationSpeciesRuleDTO ToRule(SpeciesRegulation regulation, int locationId)
+        /// <summary>
+        /// Resolves one species at one water into one rule per fin state that actually
+        /// behaves differently there.
+        ///
+        /// Every fin state is resolved independently against the rules that could apply to
+        /// it — its own plus the unqualified ones. When they all land on the same regulation
+        /// the species does not distinguish fin states here, so they collapse into a single
+        /// unlabelled rule; that is the case for every species with no variant rules, which
+        /// is why this returns exactly what it did before variants existed.
+        /// </summary>
+        /// <param name="speciesGroup">Every candidate regulation for one species.</param>
+        /// <param name="locationId">The water being resolved.</param>
+        /// <param name="rank">Region specificity of a candidate, ascending.</param>
+        private List<LocationSpeciesRuleDTO> ResolveSpecies(
+            IEnumerable<SpeciesRegulation> speciesGroup,
+            int locationId,
+            Func<SpeciesRegulation, int> rank)
+        {
+            var resolved = Enum.GetValues<AdiposeFin>()
+                .Select(fin => (
+                    Fin: fin,
+                    // Region specificity stays the primary axis: a rule set closer to the
+                    // water wins even when it names no fin state. The fin only breaks a tie
+                    // between candidates of equal rank, where the exact match wins.
+                    Ordered: speciesGroup
+                        .Where(r => r.AdiposeFin == null || r.AdiposeFin == fin)
+                        .OrderBy(rank)
+                        .ThenBy(r => r.AdiposeFin == null ? 1 : 0)
+                        .ToList()))
+                .Where(x => x.Ordered.Count > 0)
+                .ToList();
+
+            if (resolved.Count == 0)
+            {
+                return [];
+            }
+
+            var winners = resolved.Select(x => x.Ordered[0].Id).Distinct().Count();
+            if (winners == 1)
+            {
+                // No fin state is treated differently, so labelling the rule with one would
+                // imply a distinction the regulations don't make.
+                return [ToRule(resolved[0].Ordered, locationId, fin: null)];
+            }
+
+            return resolved.Select(x => ToRule(x.Ordered, locationId, x.Fin)).ToList();
+        }
+
+        /// <summary>
+        /// Turns an ordered candidate list into the rule that applies, carrying the
+        /// runner-up as the fallback.
+        /// </summary>
+        /// <param name="ordered">Candidates, most specific first.</param>
+        /// <param name="locationId">The water being resolved.</param>
+        /// <param name="fin">
+        /// The fin state this rule covers, which is not necessarily the winning
+        /// regulation's own value — an unqualified rule can be what applies to clipped fish
+        /// once an intact-only rule has taken the other half of the species.
+        /// </param>
+        private LocationSpeciesRuleDTO ToRule(List<SpeciesRegulation> ordered, int locationId, AdiposeFin? fin)
+        {
+            // The winner is the rule that applies; the runner-up is what a maintainer would
+            // fall back to if the winner were removed, which the editor needs in order to
+            // say so.
+            var dto = ToRule(ordered[0], locationId, fin);
+            dto.FallsBackTo = ordered.Count > 1 ? ToRule(ordered[1], locationId, fin) : null;
+            return dto;
+        }
+
+        private LocationSpeciesRuleDTO ToRule(SpeciesRegulation regulation, int locationId, AdiposeFin? fin)
         {
             var dto = _mapper.Map<LocationSpeciesRuleDTO>(regulation);
             dto.Source = ResolveSource(regulation, locationId);
+            dto.AdiposeFin = fin;
             return dto;
         }
 
@@ -188,6 +257,8 @@ namespace FishingMap.Domain.Services
                 .ThenBy(r => r.Region == null ? 0 : (int)r.Region.Type)
                 .ThenBy(r => r.Region?.Name ?? string.Empty)
                 .ThenBy(r => r.Locations.Select(l => l.Name).FirstOrDefault() ?? string.Empty)
+                // Variants of one scope sit together, the unqualified rule first.
+                .ThenBy(r => r.AdiposeFin == null ? 0 : (int)r.AdiposeFin + 1)
                 .ToList();
         }
 
@@ -259,7 +330,7 @@ namespace FishingMap.Domain.Services
             }
         }
 
-        private async Task ValidateScope(int? regionId, IEnumerable<int> locationIds, int? currentRegulationId, int speciesId)
+        private async Task ValidateScope(int? regionId, IEnumerable<int> locationIds, int? currentRegulationId, int speciesId, AdiposeFin? adiposeFin)
         {
             var locationIdList = locationIds?.Distinct().ToList() ?? new List<int>();
             var hasRegion = regionId.HasValue;
@@ -281,13 +352,17 @@ namespace FishingMap.Domain.Services
 
             if (hasLocations)
             {
+                // Scoped to the fin state as well as the species: trout with an intact fin and
+                // trout with a clipped one are two legitimate rules at the same water, and
+                // without this they would collide as a duplicate.
                 var conflict = await _unitOfWork.SpeciesRegulations.Find(
                     r => r.Id != (currentRegulationId ?? 0)
                          && r.SpeciesId == speciesId
+                         && r.AdiposeFin == adiposeFin
                          && r.Locations.Any(l => locationIdList.Contains(l.Id)));
                 if (conflict != null)
                 {
-                    throw new ArgumentException("One or more locations already have a location-scoped rule for this species.");
+                    throw new ArgumentException("One or more locations already have a location-scoped rule for this species and adipose fin state.");
                 }
             }
         }

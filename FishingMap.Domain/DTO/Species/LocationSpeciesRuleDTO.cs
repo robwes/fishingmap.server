@@ -18,11 +18,17 @@ namespace FishingMap.Domain.DTO.Species
         // Where the resolved rule comes from: "Location", "Region: <name>", or "National".
         public string Source { get; set; } = string.Empty;
 
+        // Which fish this resolved rule covers. Null means all of them; otherwise a species
+        // yields one LocationSpeciesRuleDTO per fin state that has a rule, so the client
+        // renders a species as several labelled blocks rather than one row.
+        public AdiposeFin? AdiposeFin { get; set; }
+
         public decimal? MinimumSizeCm { get; set; }
         public decimal? MaximumSizeCm { get; set; }
         public int? BagLimit { get; set; }
         public BagLimitBasis? BagLimitBasis { get; set; }
         public bool IsCatchAndReleaseOnly { get; set; }
+        public bool IsFullyProtected { get; set; }
         public bool MustReportCatch { get; set; }
 
         public string? AdditionalRules { get; set; }

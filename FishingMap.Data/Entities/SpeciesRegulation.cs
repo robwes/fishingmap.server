@@ -18,6 +18,14 @@ namespace FishingMap.Data.Entities
         // Location-scoped rule. M:M so a single regulation can apply to multiple specific waters.
         public virtual ICollection<Location> Locations { get; set; } = new HashSet<Location>();
 
+        // Narrows the rule to fish with a particular adipose fin state. Null means it applies
+        // whatever the fin looks like, which is every rule written before this field existed.
+        //
+        // This is a filter on the rule, NOT a specificity tier: resolution keeps the region
+        // cascade as its primary axis and only prefers an exact fin match over a null one
+        // between candidates that already tie on region.
+        public AdiposeFin? AdiposeFin { get; set; }
+
         public decimal? MinimumSizeCm { get; set; }
         public decimal? MaximumSizeCm { get; set; }
         public int? BagLimit { get; set; }
@@ -27,6 +35,12 @@ namespace FishingMap.Data.Entities
         public BagLimitBasis? BagLimitBasis { get; set; }
 
         public bool IsCatchAndReleaseOnly { get; set; }
+
+        // The species may not be taken at all here. Distinct from IsCatchAndReleaseOnly:
+        // catch-and-release is a permitted way to fish, while full protection means the fish
+        // is off-limits and an accidental catch must go back. Conflating the two would have
+        // the app tell anglers it is fine to target a protected fish. See #16.
+        public bool IsFullyProtected { get; set; }
 
         public bool MustReportCatch { get; set; }
 

@@ -19,11 +19,15 @@ namespace FishingMap.Domain.DTO.Regulations
         public RegionDTO? Region { get; set; }
         public IEnumerable<LocationIdName> Locations { get; set; } = new List<LocationIdName>();
 
+        // Null means the rule applies whatever the fin looks like.
+        public AdiposeFin? AdiposeFin { get; set; }
+
         public decimal? MinimumSizeCm { get; set; }
         public decimal? MaximumSizeCm { get; set; }
         public int? BagLimit { get; set; }
         public BagLimitBasis? BagLimitBasis { get; set; }
         public bool IsCatchAndReleaseOnly { get; set; }
+        public bool IsFullyProtected { get; set; }
         public bool MustReportCatch { get; set; }
         public string? AdditionalRules { get; set; }
 

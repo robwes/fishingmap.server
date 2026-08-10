@@ -578,5 +578,201 @@ namespace FishingMap.Domain.Tests.Services.Tests
             Assert.Equal("Kalajärvi", water.Name);
             Assert.Equal(BagLimitBasis.Permit, result[2].BagLimitBasis);
         }
+
+        /// <summary>
+        /// Puts a water under Sub -> Ely -> Finland, the shape the variant tests below share.
+        /// </summary>
+        private Location GivenLocationInFullChain()
+        {
+            var location = new Location { Id = 5, RegionId = 10 };
+            _locationsRepoMock.Setup(l => l.GetById(5, null, true)).ReturnsAsync(location);
+            _regionsRepoMock.Setup(r => r.GetAncestry(10)).ReturnsAsync(new List<Region>
+            {
+                new() { Id = 10, Name = "Sub", Type = RegionType.ManagementArea, ParentRegionId = 20 },
+                new() { Id = 20, Name = "Ely", Type = RegionType.Ely, ParentRegionId = 1 },
+                new() { Id = 1, Name = "Finland", Type = RegionType.Root }
+            });
+            return location;
+        }
+
+        /// <summary>
+        /// A region-scoped trout rule.
+        /// </summary>
+        /// <param name="id">Regulation id.</param>
+        /// <param name="regionId">Region it is scoped to; 1 = Finland, 20 = Ely.</param>
+        /// <param name="fin">Fin state it is narrowed to, or null for all trout.</param>
+        /// <param name="minimumSizeCm">Minimum size, used to tell the rules apart.</param>
+        private static SpeciesRegulation TroutRule(int id, int regionId, AdiposeFin? fin, decimal? minimumSizeCm)
+        {
+            var type = regionId == 1 ? RegionType.Root : RegionType.Ely;
+            return new SpeciesRegulation
+            {
+                Id = id,
+                SpeciesId = 100,
+                RegionId = regionId,
+                Region = new Region { Id = regionId, Type = type, Name = regionId == 1 ? "Finland" : "Ely" },
+                AdiposeFin = fin,
+                MinimumSizeCm = minimumSizeCm
+            };
+        }
+
+        [Fact]
+        public async Task GetEffectiveRulesForLocation_ShouldSplitASpeciesIntoOneRulePerFinState()
+        {
+            GivenLocationInFullChain();
+            var intact = TroutRule(1, 1, AdiposeFin.Intact, null);
+            intact.IsFullyProtected = true;
+            var clipped = TroutRule(2, 1, AdiposeFin.Clipped, 50);
+
+            _regulationsRepoMock.Setup(r => r.GetCandidatesForLocation(5, It.IsAny<IEnumerable<int>>()))
+                .ReturnsAsync(new List<SpeciesRegulation> { intact, clipped });
+
+            var rules = (await _service.GetEffectiveRulesForLocation(5)).ToList();
+
+            Assert.Equal(2, rules.Count);
+            var intactRule = Assert.Single(rules, r => r.AdiposeFin == AdiposeFin.Intact);
+            Assert.True(intactRule.IsFullyProtected);
+            var clippedRule = Assert.Single(rules, r => r.AdiposeFin == AdiposeFin.Clipped);
+            Assert.Equal(50, clippedRule.MinimumSizeCm);
+        }
+
+        [Fact]
+        public async Task GetEffectiveRulesForLocation_ShouldReturnOneUnlabelledRule_WhenNoRuleNamesAFinState()
+        {
+            // The behaviour every species had before variants existed, and still has.
+            GivenLocationInFullChain();
+
+            _regulationsRepoMock.Setup(r => r.GetCandidatesForLocation(5, It.IsAny<IEnumerable<int>>()))
+                .ReturnsAsync(new List<SpeciesRegulation> { TroutRule(1, 1, null, 40) });
+
+            var rule = Assert.Single(await _service.GetEffectiveRulesForLocation(5));
+
+            Assert.Null(rule.AdiposeFin);
+            Assert.Equal(40, rule.MinimumSizeCm);
+        }
+
+        [Fact]
+        public async Task GetEffectiveRulesForLocation_ShouldCoverTheOtherFinState_WithTheUnqualifiedRule()
+        {
+            // An intact-only rule alongside a rule for all trout must not drop clipped fish:
+            // the unqualified rule is what applies to them, labelled as such.
+            GivenLocationInFullChain();
+            var intact = TroutRule(1, 1, AdiposeFin.Intact, null);
+            intact.IsFullyProtected = true;
+
+            _regulationsRepoMock.Setup(r => r.GetCandidatesForLocation(5, It.IsAny<IEnumerable<int>>()))
+                .ReturnsAsync(new List<SpeciesRegulation> { intact, TroutRule(2, 1, null, 60) });
+
+            var rules = (await _service.GetEffectiveRulesForLocation(5)).ToList();
+
+            Assert.Equal(2, rules.Count);
+            Assert.True(Assert.Single(rules, r => r.AdiposeFin == AdiposeFin.Intact).IsFullyProtected);
+            Assert.Equal(60, Assert.Single(rules, r => r.AdiposeFin == AdiposeFin.Clipped).MinimumSizeCm);
+        }
+
+        [Fact]
+        public async Task GetEffectiveRulesForLocation_ShouldLetANearerRegionBeatAnExactFinMatch()
+        {
+            // Region specificity is the primary axis. An ELY rule for all trout overrides a
+            // national intact-only rule, because the nearer authority spoke about this water.
+            GivenLocationInFullChain();
+
+            _regulationsRepoMock.Setup(r => r.GetCandidatesForLocation(5, It.IsAny<IEnumerable<int>>()))
+                .ReturnsAsync(new List<SpeciesRegulation>
+                {
+                    TroutRule(1, 1, AdiposeFin.Intact, 45),
+                    TroutRule(2, 20, null, 55)
+                });
+
+            var rules = (await _service.GetEffectiveRulesForLocation(5)).ToList();
+
+            // One winner for both fin states, so they collapse into a single unlabelled rule.
+            var rule = Assert.Single(rules);
+            Assert.Null(rule.AdiposeFin);
+            Assert.Equal(55, rule.MinimumSizeCm);
+        }
+
+        [Fact]
+        public async Task GetEffectiveRulesForLocation_ShouldPreferTheExactFinMatch_AtEqualRegionRank()
+        {
+            GivenLocationInFullChain();
+
+            _regulationsRepoMock.Setup(r => r.GetCandidatesForLocation(5, It.IsAny<IEnumerable<int>>()))
+                .ReturnsAsync(new List<SpeciesRegulation>
+                {
+                    TroutRule(1, 1, null, 60),
+                    TroutRule(2, 1, AdiposeFin.Clipped, 50)
+                });
+
+            var rules = (await _service.GetEffectiveRulesForLocation(5)).ToList();
+
+            var clipped = Assert.Single(rules, r => r.AdiposeFin == AdiposeFin.Clipped);
+            Assert.Equal(50, clipped.MinimumSizeCm);
+            // ...and the unqualified rule is what it shadows, so the editor can say so.
+            Assert.Equal(60, clipped.FallsBackTo!.MinimumSizeCm);
+        }
+
+        [Fact]
+        public async Task AddRegulation_ShouldAllowASecondVariantAtTheSameWater()
+        {
+            _speciesRepoMock.Setup(s => s.Any(It.IsAny<Expression<Func<Species, bool>>>())).ReturnsAsync(true);
+            _locationsRepoMock.Setup(l => l.GetAll(
+                It.IsAny<Expression<Func<Location, bool>>>(), null, null, false))
+                .ReturnsAsync(new List<Location> { new() { Id = 5 } });
+
+            // The duplicate check runs against the fin state too, so the existing
+            // intact-finned rule at this water does not block the clipped one.
+            Expression<Func<SpeciesRegulation, bool>>? predicate = null;
+            _regulationsRepoMock.Setup(r => r.Find(
+                It.IsAny<Expression<Func<SpeciesRegulation, bool>>>(),
+                It.IsAny<Expression<Func<SpeciesRegulation, object>>[]?>(),
+                It.IsAny<bool>()))
+                .Callback<Expression<Func<SpeciesRegulation, bool>>, Expression<Func<SpeciesRegulation, object>>[]?, bool>(
+                    (p, _, _) => predicate = p)
+                .ReturnsAsync((SpeciesRegulation?)null);
+            _regulationsRepoMock.Setup(r => r.Add(It.IsAny<SpeciesRegulation>()))
+                .Returns<SpeciesRegulation>(r => { r.Id = 9; return r; });
+
+            await _service.AddRegulation(new SpeciesRegulationAdd
+            {
+                SpeciesId = 100,
+                LocationIds = new[] { 5 },
+                AdiposeFin = AdiposeFin.Clipped,
+                MinimumSizeCm = 50
+            });
+
+            var existingIntactRule = new SpeciesRegulation
+            {
+                Id = 1,
+                SpeciesId = 100,
+                AdiposeFin = AdiposeFin.Intact,
+                Locations = new List<Location> { new() { Id = 5 } }
+            };
+            Assert.False(predicate!.Compile()(existingIntactRule));
+        }
+
+        [Fact]
+        public async Task AddRegulation_ShouldPersistTheFinStateAndFullProtection()
+        {
+            _regionsRepoMock.Setup(r => r.Any(It.IsAny<Expression<Func<Region, bool>>>())).ReturnsAsync(true);
+            _speciesRepoMock.Setup(s => s.Any(It.IsAny<Expression<Func<Species, bool>>>())).ReturnsAsync(true);
+
+            SpeciesRegulation? captured = null;
+            _regulationsRepoMock.Setup(r => r.Add(It.IsAny<SpeciesRegulation>()))
+                .Returns<SpeciesRegulation>(r => { r.Id = 7; captured = r; return r; });
+
+            await _service.AddRegulation(new SpeciesRegulationAdd
+            {
+                SpeciesId = 100,
+                RegionId = 1,
+                AdiposeFin = AdiposeFin.Intact,
+                IsFullyProtected = true
+            });
+
+            Assert.Equal(AdiposeFin.Intact, captured!.AdiposeFin);
+            Assert.True(captured.IsFullyProtected);
+            // Full protection is not catch-and-release; entering one must not set the other.
+            Assert.False(captured.IsCatchAndReleaseOnly);
+        }
     }
 }
