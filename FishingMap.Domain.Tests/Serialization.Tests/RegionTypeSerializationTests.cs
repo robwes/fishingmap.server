@@ -16,7 +16,7 @@ namespace FishingMap.Domain.Tests.Serialization.Tests
         private static readonly JsonSerializerOptions WebOptions = new(JsonSerializerDefaults.Web);
 
         [Theory]
-        [InlineData(RegionType.National, "National")]
+        [InlineData(RegionType.Root, "Root")]
         [InlineData(RegionType.Ely, "Ely")]
         [InlineData(RegionType.ManagementArea, "ManagementArea")]
         public void RegionDTO_SerializesTypeAsItsName(RegionType type, string expected)

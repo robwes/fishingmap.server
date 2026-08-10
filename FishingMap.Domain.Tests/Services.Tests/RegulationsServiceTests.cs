@@ -234,7 +234,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
             {
                 new() { Id = 10, Name = "Sub", Type = RegionType.ManagementArea, ParentRegionId = 20 },
                 new() { Id = 20, Name = "Ely", Type = RegionType.Ely, ParentRegionId = 1 },
-                new() { Id = 1, Name = "Finland", Type = RegionType.National }
+                new() { Id = 1, Name = "Finland", Type = RegionType.Root }
             });
 
             var locScoped = new SpeciesRegulation
@@ -272,7 +272,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
             {
                 new() { Id = 10, Name = "Sub", Type = RegionType.ManagementArea, ParentRegionId = 20 },
                 new() { Id = 20, Name = "Ely", Type = RegionType.Ely, ParentRegionId = 1 },
-                new() { Id = 1, Name = "Finland", Type = RegionType.National }
+                new() { Id = 1, Name = "Finland", Type = RegionType.Root }
             });
 
             var nationalRule = new SpeciesRegulation
@@ -280,7 +280,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
                 Id = 1,
                 SpeciesId = 100,
                 RegionId = 1,
-                Region = new Region { Id = 1, Type = RegionType.National, Name = "Finland" },
+                Region = new Region { Id = 1, Type = RegionType.Root, Name = "Finland" },
                 MinimumSizeCm = 20
             };
             var elyRule = new SpeciesRegulation
@@ -307,14 +307,14 @@ namespace FishingMap.Domain.Tests.Services.Tests
         {
             var location = new Location { Id = 5, RegionId = null };
             _locationsRepoMock.Setup(l => l.GetById(5, null, true)).ReturnsAsync(location);
-            _regionsRepoMock.Setup(r => r.GetNationalRegionId()).ReturnsAsync(1);
+            _regionsRepoMock.Setup(r => r.GetRootRegionId()).ReturnsAsync(1);
 
             var nationalRule = new SpeciesRegulation
             {
                 Id = 1,
                 SpeciesId = 100,
                 RegionId = 1,
-                Region = new Region { Id = 1, Type = RegionType.National, Name = "Finland" },
+                Region = new Region { Id = 1, Type = RegionType.Root, Name = "Finland" },
                 MinimumSizeCm = 20
             };
 
@@ -325,7 +325,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
 
             Assert.Single(rules);
             Assert.Equal("National", rules[0].Source);
-            _regionsRepoMock.Verify(r => r.GetNationalRegionId(), Times.Once);
+            _regionsRepoMock.Verify(r => r.GetRootRegionId(), Times.Once);
             _regionsRepoMock.Verify(r => r.GetAncestry(It.IsAny<int>()), Times.Never);
         }
 
@@ -337,7 +337,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
             var location = new Location { Id = 5, RegionId = null };
             var otherWater = new Location { Id = 7 };
             _locationsRepoMock.Setup(l => l.GetById(5, null, true)).ReturnsAsync(location);
-            _regionsRepoMock.Setup(r => r.GetNationalRegionId()).ReturnsAsync(1);
+            _regionsRepoMock.Setup(r => r.GetRootRegionId()).ReturnsAsync(1);
 
             var shared = new SpeciesRegulation
             {
@@ -365,7 +365,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
             _regionsRepoMock.Setup(r => r.GetAncestry(20)).ReturnsAsync(new List<Region>
             {
                 new() { Id = 20, Name = "Ely", Type = RegionType.Ely, ParentRegionId = 1 },
-                new() { Id = 1, Name = "Finland", Type = RegionType.National }
+                new() { Id = 1, Name = "Finland", Type = RegionType.Root }
             });
 
             var nationalRule = new SpeciesRegulation
@@ -373,7 +373,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
                 Id = 1,
                 SpeciesId = 100,
                 RegionId = 1,
-                Region = new Region { Id = 1, Type = RegionType.National, Name = "Finland" },
+                Region = new Region { Id = 1, Type = RegionType.Root, Name = "Finland" },
                 MinimumSizeCm = 20
             };
             var locScoped = new SpeciesRegulation
@@ -406,14 +406,14 @@ namespace FishingMap.Domain.Tests.Services.Tests
         {
             var location = new Location { Id = 5, RegionId = null };
             _locationsRepoMock.Setup(l => l.GetById(5, null, true)).ReturnsAsync(location);
-            _regionsRepoMock.Setup(r => r.GetNationalRegionId()).ReturnsAsync(1);
+            _regionsRepoMock.Setup(r => r.GetRootRegionId()).ReturnsAsync(1);
 
             var only = new SpeciesRegulation
             {
                 Id = 1,
                 SpeciesId = 100,
                 RegionId = 1,
-                Region = new Region { Id = 1, Type = RegionType.National, Name = "Finland" }
+                Region = new Region { Id = 1, Type = RegionType.Root, Name = "Finland" }
             };
 
             _regulationsRepoMock.Setup(r => r.GetCandidatesForLocation(5, It.IsAny<IEnumerable<int>>()))
@@ -556,7 +556,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
                 Id = 1,
                 SpeciesId = 100,
                 RegionId = 1,
-                Region = new Region { Id = 1, Name = "Finland", Type = RegionType.National }
+                Region = new Region { Id = 1, Name = "Finland", Type = RegionType.Root }
             };
 
             _regulationsRepoMock.Setup(r => r.GetForSpecies(100))
@@ -568,7 +568,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
 
             // National, then the rest of the tree, then location-scoped rules.
             Assert.Equal("Finland", result[0].Region!.Name);
-            Assert.Equal(RegionType.National, result[0].Region!.Type);
+            Assert.Equal(RegionType.Root, result[0].Region!.Type);
             Assert.Equal("Uusimaa ELY", result[1].Region!.Name);
 
             // The whole point of this endpoint: names, not just ids.

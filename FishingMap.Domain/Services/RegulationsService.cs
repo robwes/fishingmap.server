@@ -199,7 +199,12 @@ namespace FishingMap.Domain.Services
             }
             if (r.Region != null)
             {
-                return r.Region.Type == RegionType.National
+                // "National", not "Root": this string is the user-facing label the
+                // client renders on a rule badge, not the tier's name. The tier was
+                // renamed because a top-level region needn't be a country; what to
+                // call it to an angler is a separate question, still open in
+                // robwes/fishingmap.web#16. Changing it here is a wire change.
+                return r.Region.Type == RegionType.Root
                     ? "National"
                     : $"Region: {r.Region.Name}";
             }
@@ -214,7 +219,7 @@ namespace FishingMap.Domain.Services
                 return chain.Select(r => r.Id).ToList();
             }
 
-            var nationalId = await _unitOfWork.Regions.GetNationalRegionId();
+            var nationalId = await _unitOfWork.Regions.GetRootRegionId();
             return new List<int> { nationalId };
         }
 
@@ -266,7 +271,7 @@ namespace FishingMap.Domain.Services
             }
             if (!hasRegion && !hasLocations)
             {
-                throw new ArgumentException("A regulation must specify either a RegionId (use the National region for nationwide rules) or one or more LocationIds.");
+                throw new ArgumentException("A regulation must specify either a RegionId (use the root region for rules that apply everywhere) or one or more LocationIds.");
             }
 
             if (hasRegion && !await _unitOfWork.Regions.Any(r => r.Id == regionId!.Value))

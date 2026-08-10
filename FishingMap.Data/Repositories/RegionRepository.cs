@@ -11,12 +11,12 @@ namespace FishingMap.Data.Repositories
         {
         }
 
-        public async Task<int> GetNationalRegionId()
+        public async Task<int> GetRootRegionId()
         {
             var national = await _context.Regions
                 .AsNoTracking()
-                .FirstOrDefaultAsync(r => r.Type == RegionType.National)
-                ?? throw new InvalidOperationException("National region row is missing. DbInitializer must seed it.");
+                .FirstOrDefaultAsync(r => r.Type == RegionType.Root)
+                ?? throw new InvalidOperationException("Root region row is missing. DbInitializer must seed it.");
 
             return national.Id;
         }

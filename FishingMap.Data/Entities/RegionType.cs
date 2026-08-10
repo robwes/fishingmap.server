@@ -12,7 +12,11 @@ namespace FishingMap.Data.Entities
     [JsonConverter(typeof(JsonStringEnumConverter<RegionType>))]
     public enum RegionType
     {
-        National = 0,
+        // The top of the hierarchy — today the row named "Finland", but the tier is
+        // Root rather than National because a top-level region need not be a country.
+        // The rule Source string still reads "National"; that is a display label, not
+        // this name. See robwes/fishingmap.web#16.
+        Root = 0,
         Ely = 1,
         ManagementArea = 2
     }

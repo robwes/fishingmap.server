@@ -4,7 +4,7 @@ namespace FishingMap.Data.Interfaces
 {
     public interface IRegionRepository : IRepository<Region>
     {
-        Task<int> GetNationalRegionId();
+        Task<int> GetRootRegionId();
         Task<IReadOnlyList<Region>> GetAncestry(int regionId);
     }
 }

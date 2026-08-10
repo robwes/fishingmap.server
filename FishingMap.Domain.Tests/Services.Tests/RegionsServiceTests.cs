@@ -35,10 +35,10 @@ namespace FishingMap.Domain.Tests.Services.Tests
         {
             _regionsRepoMock.Setup(r => r.Any(It.IsAny<Expression<Func<Region, bool>>>())).ReturnsAsync(true);
 
-            var add = new RegionAdd { Name = "Finland", Type = RegionType.National };
+            var add = new RegionAdd { Name = "Finland", Type = RegionType.Root };
 
             var ex = await Assert.ThrowsAsync<ArgumentException>(() => _service.AddRegion(add));
-            Assert.Contains("National region already exists", ex.Message);
+            Assert.Contains("root region already exists", ex.Message);
         }
 
         [Fact]
@@ -46,10 +46,10 @@ namespace FishingMap.Domain.Tests.Services.Tests
         {
             _regionsRepoMock.Setup(r => r.Any(It.IsAny<Expression<Func<Region, bool>>>())).ReturnsAsync(false);
 
-            var add = new RegionAdd { Name = "Finland", Type = RegionType.National, ParentRegionId = 1 };
+            var add = new RegionAdd { Name = "Finland", Type = RegionType.Root, ParentRegionId = 1 };
 
             var ex = await Assert.ThrowsAsync<ArgumentException>(() => _service.AddRegion(add));
-            Assert.Contains("National region cannot have a parent", ex.Message);
+            Assert.Contains("root region cannot have a parent", ex.Message);
         }
 
         [Fact]
@@ -103,12 +103,12 @@ namespace FishingMap.Domain.Tests.Services.Tests
         public async Task UpdateRegion_ShouldThrow_WhenChangingNationalType()
         {
             _regionsRepoMock.Setup(r => r.GetById(1, null, false))
-                .ReturnsAsync(new Region { Id = 1, Name = "Finland", Type = RegionType.National });
+                .ReturnsAsync(new Region { Id = 1, Name = "Finland", Type = RegionType.Root });
 
             var upd = new RegionUpdate { Id = 1, Name = "Finland", Type = RegionType.Ely };
 
             var ex = await Assert.ThrowsAsync<ArgumentException>(() => _service.UpdateRegion(1, upd));
-            Assert.Contains("National region's type cannot be changed", ex.Message);
+            Assert.Contains("root region's type cannot be changed", ex.Message);
         }
 
         [Fact]
@@ -117,10 +117,10 @@ namespace FishingMap.Domain.Tests.Services.Tests
             _regionsRepoMock.Setup(r => r.GetById(2, null, false))
                 .ReturnsAsync(new Region { Id = 2, Name = "Uusimaa", Type = RegionType.Ely, ParentRegionId = 1 });
 
-            var upd = new RegionUpdate { Id = 2, Name = "Uusimaa", Type = RegionType.National };
+            var upd = new RegionUpdate { Id = 2, Name = "Uusimaa", Type = RegionType.Root };
 
             var ex = await Assert.ThrowsAsync<ArgumentException>(() => _service.UpdateRegion(2, upd));
-            Assert.Contains("Cannot promote a region to National", ex.Message);
+            Assert.Contains("Cannot promote a region to Root", ex.Message);
         }
 
         [Fact]
@@ -146,7 +146,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
             {
                 new Region { Id = 3, Type = RegionType.ManagementArea, ParentRegionId = 2 },
                 new Region { Id = 2, Type = RegionType.Ely, ParentRegionId = 1 },
-                new Region { Id = 1, Type = RegionType.National }
+                new Region { Id = 1, Type = RegionType.Root }
             });
 
             var upd = new RegionUpdate { Id = 2, Name = "Uusimaa", Type = RegionType.Ely, ParentRegionId = 3 };
@@ -164,7 +164,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
             _regionsRepoMock.Setup(r => r.GetAncestry(3)).ReturnsAsync(new List<Region>
             {
                 new Region { Id = 3, Type = RegionType.Ely, ParentRegionId = 1 },
-                new Region { Id = 1, Type = RegionType.National }
+                new Region { Id = 1, Type = RegionType.Root }
             });
 
             var upd = new RegionUpdate { Id = 2, Name = "New", Type = RegionType.ManagementArea, ParentRegionId = 3 };
@@ -181,10 +181,10 @@ namespace FishingMap.Domain.Tests.Services.Tests
         public async Task DeleteRegion_ShouldThrow_WhenNational()
         {
             _regionsRepoMock.Setup(r => r.GetById(1, null, false))
-                .ReturnsAsync(new Region { Id = 1, Type = RegionType.National });
+                .ReturnsAsync(new Region { Id = 1, Type = RegionType.Root });
 
             var ex = await Assert.ThrowsAsync<ArgumentException>(() => _service.DeleteRegion(1));
-            Assert.Contains("National region cannot be deleted", ex.Message);
+            Assert.Contains("root region cannot be deleted", ex.Message);
         }
 
         [Fact]

@@ -31,15 +31,15 @@ namespace FishingMap.Domain.Services
 
         public async Task<RegionDTO> AddRegion(RegionAdd region)
         {
-            if (region.Type == RegionType.National)
+            if (region.Type == RegionType.Root)
             {
-                if (await _unitOfWork.Regions.Any(r => r.Type == RegionType.National))
+                if (await _unitOfWork.Regions.Any(r => r.Type == RegionType.Root))
                 {
-                    throw new ArgumentException("A National region already exists. Only one is allowed.");
+                    throw new ArgumentException("A root region already exists. Only one is allowed.");
                 }
                 if (region.ParentRegionId.HasValue)
                 {
-                    throw new ArgumentException("National region cannot have a parent.");
+                    throw new ArgumentException("The root region cannot have a parent.");
                 }
             }
             else if (!region.ParentRegionId.HasValue)
@@ -74,22 +74,22 @@ namespace FishingMap.Domain.Services
                 throw new KeyNotFoundException($"Region with id {id} not found.");
             }
 
-            if (entity.Type == RegionType.National)
+            if (entity.Type == RegionType.Root)
             {
-                if (region.Type != RegionType.National)
+                if (region.Type != RegionType.Root)
                 {
-                    throw new ArgumentException("National region's type cannot be changed.");
+                    throw new ArgumentException("The root region's type cannot be changed.");
                 }
                 if (region.ParentRegionId.HasValue)
                 {
-                    throw new ArgumentException("National region cannot have a parent.");
+                    throw new ArgumentException("The root region cannot have a parent.");
                 }
             }
             else
             {
-                if (region.Type == RegionType.National)
+                if (region.Type == RegionType.Root)
                 {
-                    throw new ArgumentException("Cannot promote a region to National. The National row is fixed.");
+                    throw new ArgumentException("Cannot promote a region to Root. The root row is fixed.");
                 }
                 if (!region.ParentRegionId.HasValue)
                 {
@@ -125,9 +125,9 @@ namespace FishingMap.Domain.Services
             var entity = await _unitOfWork.Regions.GetById(id);
             if (entity == null) return;
 
-            if (entity.Type == RegionType.National)
+            if (entity.Type == RegionType.Root)
             {
-                throw new ArgumentException("National region cannot be deleted.");
+                throw new ArgumentException("The root region cannot be deleted.");
             }
 
             if (await _unitOfWork.Regions.Any(r => r.ParentRegionId == id))

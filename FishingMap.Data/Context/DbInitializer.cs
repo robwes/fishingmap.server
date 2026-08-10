@@ -19,12 +19,12 @@ namespace FishingMap.Data.Context
 
             var now = DateTime.UtcNow;
 
-            if (!_context.Regions.Any(r => r.Type == RegionType.National))
+            if (!_context.Regions.Any(r => r.Type == RegionType.Root))
             {
                 _context.Regions.Add(new Region
                 {
                     Name = "Finland",
-                    Type = RegionType.National,
+                    Type = RegionType.Root,
                     ParentRegionId = null,
                     Created = now,
                     Modified = now
