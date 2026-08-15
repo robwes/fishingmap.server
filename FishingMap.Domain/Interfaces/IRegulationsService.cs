@@ -19,6 +19,8 @@ namespace FishingMap.Domain.Interfaces
         Task<IEnumerable<int>> GetFollowedSpeciesIds(int locationId);
 
         Task SetFollowsRegion(int locationId, int speciesId, bool follows);
-        Task<IEnumerable<SpeciesRegulationScopeDTO>> GetRegulationsForSpecies(int speciesId);
+        // Region-scoped rules only — see SpeciesRegulationScopeDTO for why the per-water
+        // exceptions are not included.
+        Task<IEnumerable<SpeciesRegulationScopeDTO>> GetRegionRulesForSpecies(int speciesId);
     }
 }

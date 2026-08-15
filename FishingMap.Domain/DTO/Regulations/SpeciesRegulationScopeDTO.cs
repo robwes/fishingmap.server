@@ -1,23 +1,24 @@
 using FishingMap.Data.Entities;
-using FishingMap.Domain.DTO.Locations;
 using FishingMap.Domain.DTO.Regions;
 using FishingMap.Domain.DTO.Species;
 
 namespace FishingMap.Domain.DTO.Regulations
 {
-    // One regulation for a species, carrying the NAMES of whatever it is scoped to.
+    // One REGION-scoped regulation for a species, carrying the region's NAME.
     // SpeciesRegulationDTO only exposes ids, which would force the species details screen to
-    // fetch every region and location just to render a label.
+    // fetch every region just to render a label.
     //
-    // Scope is XOR, same as the entity: either Region is set and Locations is empty, or
-    // Locations is non-empty and Region is null.
+    // Location-scoped rules are deliberately absent. The species page answers an angler's
+    // question — what does the law say about this fish — and the per-water exceptions are
+    // one row per water that diverges: unbounded as the site grows, and a maintainer's view
+    // rather than a reader's. They get their own admin screen when one exists. Because of
+    // that, Region is always set here. See robwes/fishingmap.web#13.
     public class SpeciesRegulationScopeDTO
     {
         public int Id { get; set; }
         public int SpeciesId { get; set; }
 
         public RegionDTO? Region { get; set; }
-        public IEnumerable<LocationIdName> Locations { get; set; } = new List<LocationIdName>();
 
         // Null means the rule applies whatever the fin looks like.
         public AdiposeFin? AdiposeFin { get; set; }

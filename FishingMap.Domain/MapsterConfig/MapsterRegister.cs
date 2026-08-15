@@ -25,8 +25,8 @@ namespace FishingMap.Domain.MapsterConfig
             config.NewConfig<SpeciesRegulation, SpeciesRegulationDTO>()
                 .Map(dest => dest.LocationIds, src => src.Locations.Select(l => l.Id));
 
-            config.NewConfig<SpeciesRegulation, SpeciesRegulationScopeDTO>()
-                .Map(dest => dest.Locations, src => src.Locations);
+            // SpeciesRegulationScopeDTO maps by convention — it is region-scoped only, so
+            // there is no Locations collection to project.
 
             // Source and FallsBackTo depend on the requesting locationId and on the other
             // candidates, so the service sets both after mapping.

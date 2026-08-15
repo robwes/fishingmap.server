@@ -539,32 +539,26 @@ namespace FishingMap.Domain.Tests.Services.Tests
         }
 
         [Fact]
-        public async Task GetRegulationsForSpecies_ShouldThrow_WhenSpeciesMissing()
+        public async Task GetRegionRulesForSpecies_ShouldThrow_WhenSpeciesMissing()
         {
             _speciesRepoMock.Setup(s => s.Any(It.IsAny<Expression<Func<Species, bool>>>())).ReturnsAsync(false);
 
-            await Assert.ThrowsAsync<KeyNotFoundException>(() => _service.GetRegulationsForSpecies(99));
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _service.GetRegionRulesForSpecies(99));
         }
 
         [Fact]
-        public async Task GetRegulationsForSpecies_ShouldReturnNamesAndOrderNationalFirst()
+        public async Task GetRegionRulesForSpecies_ShouldReturnNamesAndOrderNationalFirst()
         {
             _speciesRepoMock.Setup(s => s.Any(It.IsAny<Expression<Func<Species, bool>>>())).ReturnsAsync(true);
 
-            var locationRule = new SpeciesRegulation
-            {
-                Id = 3,
-                SpeciesId = 100,
-                Locations = new List<Location> { new() { Id = 7, Name = "Kalajärvi" } },
-                BagLimit = 4,
-                BagLimitBasis = BagLimitBasis.Permit
-            };
             var elyRule = new SpeciesRegulation
             {
                 Id = 2,
                 SpeciesId = 100,
                 RegionId = 20,
-                Region = new Region { Id = 20, Name = "Uusimaa ELY", Type = RegionType.Ely }
+                Region = new Region { Id = 20, Name = "Uusimaa ELY", Type = RegionType.Ely },
+                BagLimit = 4,
+                BagLimitBasis = BagLimitBasis.Permit
             };
             var nationalRule = new SpeciesRegulation
             {
@@ -574,24 +568,34 @@ namespace FishingMap.Domain.Tests.Services.Tests
                 Region = new Region { Id = 1, Name = "Finland", Type = RegionType.Root }
             };
 
-            _regulationsRepoMock.Setup(r => r.GetForSpecies(100))
-                .ReturnsAsync(new List<SpeciesRegulation> { locationRule, elyRule, nationalRule });
+            _regulationsRepoMock.Setup(r => r.GetRegionRulesForSpecies(100))
+                .ReturnsAsync(new List<SpeciesRegulation> { elyRule, nationalRule });
 
-            var result = (await _service.GetRegulationsForSpecies(100)).ToList();
+            var result = (await _service.GetRegionRulesForSpecies(100)).ToList();
 
-            Assert.Equal(3, result.Count);
+            Assert.Equal(2, result.Count);
 
-            // National, then the rest of the tree, then location-scoped rules.
+            // National first, then the rest of the tree by tier.
             Assert.Equal("Finland", result[0].Region!.Name);
             Assert.Equal(RegionType.Root, result[0].Region!.Type);
-            Assert.Equal("Uusimaa ELY", result[1].Region!.Name);
-
             // The whole point of this endpoint: names, not just ids.
-            Assert.Null(result[2].Region);
-            var water = Assert.Single(result[2].Locations);
-            Assert.Equal(7, water.Id);
-            Assert.Equal("Kalajärvi", water.Name);
-            Assert.Equal(BagLimitBasis.Permit, result[2].BagLimitBasis);
+            Assert.Equal("Uusimaa ELY", result[1].Region!.Name);
+            Assert.Equal(BagLimitBasis.Permit, result[1].BagLimitBasis);
+        }
+
+        [Fact]
+        public async Task GetRegionRulesForSpecies_ShouldNotAskTheRepositoryForPerWaterRules()
+        {
+            // The species page is an angler's view. Per-water exceptions are one row per
+            // water that diverges, so the filter belongs in the query rather than in a
+            // caller that would still have loaded them all first.
+            _speciesRepoMock.Setup(s => s.Any(It.IsAny<Expression<Func<Species, bool>>>())).ReturnsAsync(true);
+            _regulationsRepoMock.Setup(r => r.GetRegionRulesForSpecies(100))
+                .ReturnsAsync(new List<SpeciesRegulation>());
+
+            await _service.GetRegionRulesForSpecies(100);
+
+            _regulationsRepoMock.Verify(r => r.GetRegionRulesForSpecies(100), Times.Once);
         }
 
         /// <summary>

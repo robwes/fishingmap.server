@@ -316,23 +316,21 @@ namespace FishingMap.Domain.Services
             return dto;
         }
 
-        public async Task<IEnumerable<SpeciesRegulationScopeDTO>> GetRegulationsForSpecies(int speciesId)
+        public async Task<IEnumerable<SpeciesRegulationScopeDTO>> GetRegionRulesForSpecies(int speciesId)
         {
             if (!await _unitOfWork.Species.Any(s => s.Id == speciesId))
             {
                 throw new KeyNotFoundException($"Species with id {speciesId} not found.");
             }
 
-            var regulations = await _unitOfWork.SpeciesRegulations.GetForSpecies(speciesId);
+            var regulations = await _unitOfWork.SpeciesRegulations.GetRegionRulesForSpecies(speciesId);
 
-            // National first, then the rest of the tree by tier and name, then the
-            // location-scoped rules — the order the species details screen reads them in.
+            // National first, then the rest of the tree by tier and name — the order the
+            // species details screen reads them in.
             return regulations
                 .Select(r => _mapper.Map<SpeciesRegulationScopeDTO>(r))
-                .OrderBy(r => r.Region == null ? 1 : 0)
-                .ThenBy(r => r.Region == null ? 0 : (int)r.Region.Type)
-                .ThenBy(r => r.Region?.Name ?? string.Empty)
-                .ThenBy(r => r.Locations.Select(l => l.Name).FirstOrDefault() ?? string.Empty)
+                .OrderBy(r => (int)r.Region!.Type)
+                .ThenBy(r => r.Region!.Name)
                 // Variants of one scope sit together, the unqualified rule first.
                 .ThenBy(r => r.AdiposeFin == null ? 0 : (int)r.AdiposeFin + 1)
                 .ToList();

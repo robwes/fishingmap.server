@@ -6,8 +6,11 @@ namespace FishingMap.Data.Interfaces
     {
         Task<IReadOnlyList<SpeciesRegulation>> GetCandidatesForLocation(int locationId, IEnumerable<int> ancestorRegionIds);
 
-        // Every regulation for one species, with Region and Locations loaded so callers can
-        // render names rather than ids.
-        Task<IReadOnlyList<SpeciesRegulation>> GetForSpecies(int speciesId);
+        // The REGION-scoped rules for one species, with Region loaded so callers can render
+        // names rather than ids. Deliberately not every rule: the species page is an
+        // angler's view of what the law says generally, and the location-scoped rules are
+        // one row per water that diverges — unbounded, and a maintainer's question rather
+        // than a reader's. See robwes/fishingmap.web#13.
+        Task<IReadOnlyList<SpeciesRegulation>> GetRegionRulesForSpecies(int speciesId);
     }
 }

@@ -48,11 +48,15 @@ namespace FishingMap.API.Controllers
 
         // Mirrors location/{locationId} rather than living under SpeciesController, so both
         // scope-shaped lookups sit next to each other on the resource they return.
-        [HttpGet("species/{speciesId}")]
+        //
+        // Explicitly ".../regions": this returns the region-scoped rules, not every rule for
+        // the species. The bare species/{speciesId} path is left free for the admin view of
+        // per-water exceptions, which needs paging this one doesn't.
+        [HttpGet("species/{speciesId}/regions")]
         [AllowAnonymous]
-        public async Task<ActionResult<IEnumerable<SpeciesRegulationScopeDTO>>> GetForSpecies(int speciesId)
+        public async Task<ActionResult<IEnumerable<SpeciesRegulationScopeDTO>>> GetRegionRulesForSpecies(int speciesId)
         {
-            var regulations = await _regulationsService.GetRegulationsForSpecies(speciesId);
+            var regulations = await _regulationsService.GetRegionRulesForSpecies(speciesId);
             return Ok(regulations);
         }
 

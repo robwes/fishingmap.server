@@ -27,15 +27,17 @@ namespace FishingMap.Data.Repositories
                 .ToListAsync();
         }
 
-        public async Task<IReadOnlyList<SpeciesRegulation>> GetForSpecies(int speciesId)
+        public async Task<IReadOnlyList<SpeciesRegulation>> GetRegionRulesForSpecies(int speciesId)
         {
+            // Region-scoped only, and the filter is here rather than in the caller so the
+            // location-scoped rows and their Locations collections are never loaded. The
+            // number of regions is bounded by the tree; the number of waters is not.
             return await _context.SpeciesRegulations
                 .AsNoTracking()
-                .Include(r => r.Locations)
                 .Include(r => r.ProtectedPeriods)
                 .Include(r => r.Region)
                 .AsSplitQuery()
-                .Where(r => r.SpeciesId == speciesId)
+                .Where(r => r.SpeciesId == speciesId && r.RegionId != null)
                 .ToListAsync();
         }
     }
