@@ -135,6 +135,7 @@ namespace FishingMap.Domain.Services
 
             var dto = _mapper.Map<Location, LocationDTO>(location);
             dto.SpeciesRules = await _regulationsService.GetEffectiveRulesForLocation(id);
+            dto.FollowsRegionSpeciesIds = await _regulationsService.GetFollowedSpeciesIds(id);
             return dto;
         }
 
@@ -248,6 +249,8 @@ namespace FishingMap.Domain.Services
             {
                 entity.Species?.Clear();
             }
+
+            await PruneFollowsRegion(entity.Id, entity.Species?.Select(s => s.Id) ?? []);
 
             if (location.Permits != null)
             {
@@ -371,6 +374,27 @@ namespace FishingMap.Domain.Services
             return _mapper.Map<Location, LocationDTO>(entity);
         }
 
+        /// <summary>
+        /// Drops "follows the region" decisions for species no longer listed at this water.
+        ///
+        /// Without it, removing a species and adding it back later would silently restore an
+        /// inheritance nobody re-chose — the water would resume publishing rules on the
+        /// strength of a decision made about a species it had since dropped.
+        /// See decision 11 in robwes/fishingmap.web#13.
+        /// </summary>
+        /// <param name="locationId">The water whose species list just changed.</param>
+        /// <param name="keptSpeciesIds">The species still listed there.</param>
+        private async Task PruneFollowsRegion(int locationId, IEnumerable<int> keptSpeciesIds)
+        {
+            var kept = keptSpeciesIds.ToList();
+            var rows = await _unitOfWork.LocationSpeciesFollowsRegions.GetAll(f => f.LocationId == locationId);
+
+            foreach (var row in rows.Where(r => !kept.Contains(r.SpeciesId)))
+            {
+                _unitOfWork.LocationSpeciesFollowsRegions.Delete(row);
+            }
+        }
+
         public async Task<LocationDTO> UpdateLocationAssociations(int id, LocationAssociationsPatch patch)
         {
             var entity = await _unitOfWork.Locations.GetLocationWithDetails(id);
@@ -380,6 +404,8 @@ namespace FishingMap.Domain.Services
             var sIds = patch.Species.Select(s => s.Id).Distinct();
             var species = await _unitOfWork.Species.GetAll(s => sIds.Contains(s.Id));
             entity.Species = (ICollection<Species>)species;
+
+            await PruneFollowsRegion(entity.Id, sIds);
 
             var pIds = patch.Permits.Select(p => p.Id).Distinct();
             var permits = await _unitOfWork.Permits.GetAll(p => pIds.Contains(p.Id));

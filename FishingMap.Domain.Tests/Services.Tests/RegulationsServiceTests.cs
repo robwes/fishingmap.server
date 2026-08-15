@@ -18,6 +18,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
         private readonly Mock<ISpeciesRegulationRepository> _regulationsRepoMock;
         private readonly Mock<ISpeciesRepository> _speciesRepoMock;
         private readonly Mock<ILocationRepository> _locationsRepoMock;
+        private readonly Mock<ILocationSpeciesFollowsRegionRepository> _followsRegionMock;
         private readonly IMapper _mapper;
         private readonly RegulationsService _service;
 
@@ -28,7 +29,21 @@ namespace FishingMap.Domain.Tests.Services.Tests
             _regulationsRepoMock = new Mock<ISpeciesRegulationRepository>();
             _speciesRepoMock = new Mock<ISpeciesRepository>();
             _locationsRepoMock = new Mock<ILocationRepository>();
+            _followsRegionMock = new Mock<ILocationSpeciesFollowsRegionRepository>();
 
+            // Inheritance is opt-in, so a region rule only reaches a water for species it
+            // follows. Species 100 is what every cascade test below rules on; the gate
+            // itself is covered by the opt-in tests at the end of this file.
+            _followsRegionMock.Setup(f => f.GetFollowedSpeciesIds(It.IsAny<int>()))
+                .ReturnsAsync(new List<int> { 100 });
+            _followsRegionMock.Setup(f => f.GetAll(
+                It.IsAny<Expression<Func<LocationSpeciesFollowsRegion, bool>>>(),
+                It.IsAny<Expression<Func<LocationSpeciesFollowsRegion, object>>[]?>(),
+                It.IsAny<Func<IQueryable<LocationSpeciesFollowsRegion>, IOrderedQueryable<LocationSpeciesFollowsRegion>>?>(),
+                It.IsAny<bool>()))
+                .ReturnsAsync(new List<LocationSpeciesFollowsRegion>());
+
+            _unitOfWorkMock.Setup(u => u.LocationSpeciesFollowsRegions).Returns(_followsRegionMock.Object);
             _unitOfWorkMock.Setup(u => u.Regions).Returns(_regionsRepoMock.Object);
             _unitOfWorkMock.Setup(u => u.SpeciesRegulations).Returns(_regulationsRepoMock.Object);
             _unitOfWorkMock.Setup(u => u.Species).Returns(_speciesRepoMock.Object);
@@ -773,6 +788,235 @@ namespace FishingMap.Domain.Tests.Services.Tests
             Assert.True(captured.IsFullyProtected);
             // Full protection is not catch-and-release; entering one must not set the other.
             Assert.False(captured.IsCatchAndReleaseOnly);
+        }
+
+        // Decision 11: inheritance is opt-in. A region rule reaches a water only for species
+        // an administrator chose to follow.
+
+        [Fact]
+        public async Task GetEffectiveRulesForLocation_ShouldNotInheritForASpeciesNobodyChose()
+        {
+            GivenLocationInFullChain();
+            _followsRegionMock.Setup(f => f.GetFollowedSpeciesIds(5)).ReturnsAsync(new List<int>());
+
+            _regulationsRepoMock.Setup(r => r.GetCandidatesForLocation(5, It.IsAny<IEnumerable<int>>()))
+                .ReturnsAsync(new List<SpeciesRegulation> { TroutRule(1, 1, null, 40) });
+
+            var rules = await _service.GetEffectiveRulesForLocation(5);
+
+            // Not a rule with no restrictions — no rule at all. The water has nothing
+            // recorded for this species, which the client must not render as "unrestricted".
+            Assert.Empty(rules);
+        }
+
+        [Fact]
+        public async Task GetEffectiveRulesForLocation_ShouldInheritOnlyForFollowedSpecies()
+        {
+            GivenLocationInFullChain();
+            _followsRegionMock.Setup(f => f.GetFollowedSpeciesIds(5)).ReturnsAsync(new List<int> { 100 });
+
+            var otherSpecies = TroutRule(2, 1, null, 25);
+            otherSpecies.SpeciesId = 200;
+
+            _regulationsRepoMock.Setup(r => r.GetCandidatesForLocation(5, It.IsAny<IEnumerable<int>>()))
+                .ReturnsAsync(new List<SpeciesRegulation> { TroutRule(1, 1, null, 40), otherSpecies });
+
+            var rules = (await _service.GetEffectiveRulesForLocation(5)).ToList();
+
+            var rule = Assert.Single(rules);
+            Assert.Equal(100, rule.SpeciesId);
+        }
+
+        [Fact]
+        public async Task GetEffectiveRulesForLocation_ShouldApplyALocalRuleWithoutFollowing()
+        {
+            // Writing a rule for a water IS the decision, so a location-scoped rule is never
+            // gated — otherwise an override would vanish unless the species also followed.
+            var location = new Location { Id = 5, RegionId = 10 };
+            _locationsRepoMock.Setup(l => l.GetById(5, null, true)).ReturnsAsync(location);
+            _regionsRepoMock.Setup(r => r.GetAncestry(10)).ReturnsAsync(new List<Region>
+            {
+                new() { Id = 10, Name = "Sub", Type = RegionType.ManagementArea, ParentRegionId = 1 },
+                new() { Id = 1, Name = "Finland", Type = RegionType.Root }
+            });
+            _followsRegionMock.Setup(f => f.GetFollowedSpeciesIds(5)).ReturnsAsync(new List<int>());
+
+            _regulationsRepoMock.Setup(r => r.GetCandidatesForLocation(5, It.IsAny<IEnumerable<int>>()))
+                .ReturnsAsync(new List<SpeciesRegulation>
+                {
+                    new()
+                    {
+                        Id = 1,
+                        SpeciesId = 100,
+                        Locations = new List<Location> { location },
+                        MinimumSizeCm = 50
+                    }
+                });
+
+            var rule = Assert.Single(await _service.GetEffectiveRulesForLocation(5));
+
+            Assert.Equal(50, rule.MinimumSizeCm);
+            Assert.Equal("Location", rule.Source);
+        }
+
+        [Fact]
+        public async Task GetEffectiveRulesForLocation_ShouldNotFallBackToARuleTheWaterDoesNotFollow()
+        {
+            // The runner-up drives "revert to the inherited rule". Offering a fallback the
+            // water never opted into would promise something reverting wouldn't deliver.
+            var location = new Location { Id = 5, RegionId = 10 };
+            _locationsRepoMock.Setup(l => l.GetById(5, null, true)).ReturnsAsync(location);
+            _regionsRepoMock.Setup(r => r.GetAncestry(10)).ReturnsAsync(new List<Region>
+            {
+                new() { Id = 10, Name = "Sub", Type = RegionType.ManagementArea, ParentRegionId = 1 },
+                new() { Id = 1, Name = "Finland", Type = RegionType.Root }
+            });
+            _followsRegionMock.Setup(f => f.GetFollowedSpeciesIds(5)).ReturnsAsync(new List<int>());
+
+            _regulationsRepoMock.Setup(r => r.GetCandidatesForLocation(5, It.IsAny<IEnumerable<int>>()))
+                .ReturnsAsync(new List<SpeciesRegulation>
+                {
+                    new()
+                    {
+                        Id = 1,
+                        SpeciesId = 100,
+                        Locations = new List<Location> { location },
+                        MinimumSizeCm = 50
+                    },
+                    TroutRule(2, 1, null, 40)
+                });
+
+            var rule = Assert.Single(await _service.GetEffectiveRulesForLocation(5));
+
+            Assert.Equal(50, rule.MinimumSizeCm);
+            Assert.Null(rule.FallsBackTo);
+        }
+
+        /// <summary>
+        /// Sets up SetFollowsRegion's existence checks to pass.
+        /// </summary>
+        private void GivenLocationAndSpeciesExist()
+        {
+            _locationsRepoMock.Setup(l => l.Any(It.IsAny<Expression<Func<Location, bool>>>())).ReturnsAsync(true);
+            _speciesRepoMock.Setup(s => s.Any(It.IsAny<Expression<Func<Species, bool>>>())).ReturnsAsync(true);
+        }
+
+        /// <summary>
+        /// Makes the follow lookup return the given row, or none.
+        /// </summary>
+        private void GivenExistingFollowRow(LocationSpeciesFollowsRegion? row)
+        {
+            _followsRegionMock.Setup(f => f.Find(
+                It.IsAny<Expression<Func<LocationSpeciesFollowsRegion, bool>>>(),
+                It.IsAny<Expression<Func<LocationSpeciesFollowsRegion, object>>[]?>(),
+                It.IsAny<bool>()))
+                .ReturnsAsync(row);
+        }
+
+        [Fact]
+        public async Task SetFollowsRegion_ShouldRecordTheDecision()
+        {
+            GivenLocationAndSpeciesExist();
+            GivenExistingFollowRow(null);
+            _regulationsRepoMock.Setup(r => r.Find(
+                It.IsAny<Expression<Func<SpeciesRegulation, bool>>>(),
+                It.IsAny<Expression<Func<SpeciesRegulation, object>>[]?>(),
+                It.IsAny<bool>()))
+                .ReturnsAsync((SpeciesRegulation?)null);
+
+            LocationSpeciesFollowsRegion? added = null;
+            _followsRegionMock.Setup(f => f.Add(It.IsAny<LocationSpeciesFollowsRegion>()))
+                .Returns<LocationSpeciesFollowsRegion>(f => { added = f; return f; });
+
+            await _service.SetFollowsRegion(5, 100, follows: true);
+
+            Assert.Equal(5, added!.LocationId);
+            Assert.Equal(100, added.SpeciesId);
+        }
+
+        [Fact]
+        public async Task SetFollowsRegion_ShouldRefuseWhileTheWaterHasItsOwnRule()
+        {
+            // Following and overriding are exclusive, and silently deleting an authored rule
+            // on a toggle would lose work. The caller removes it first.
+            GivenLocationAndSpeciesExist();
+            GivenExistingFollowRow(null);
+            _regulationsRepoMock.Setup(r => r.Find(
+                It.IsAny<Expression<Func<SpeciesRegulation, bool>>>(),
+                It.IsAny<Expression<Func<SpeciesRegulation, object>>[]?>(),
+                It.IsAny<bool>()))
+                .ReturnsAsync(new SpeciesRegulation { Id = 9, SpeciesId = 100 });
+
+            var ex = await Assert.ThrowsAsync<ArgumentException>(
+                () => _service.SetFollowsRegion(5, 100, follows: true));
+
+            Assert.Contains("Remove it before following", ex.Message);
+            _followsRegionMock.Verify(f => f.Add(It.IsAny<LocationSpeciesFollowsRegion>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task SetFollowsRegion_ShouldBeANoOp_WhenAlreadyFollowing()
+        {
+            GivenLocationAndSpeciesExist();
+            GivenExistingFollowRow(new LocationSpeciesFollowsRegion { Id = 3, LocationId = 5, SpeciesId = 100 });
+
+            await _service.SetFollowsRegion(5, 100, follows: true);
+
+            _followsRegionMock.Verify(f => f.Add(It.IsAny<LocationSpeciesFollowsRegion>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task SetFollowsRegion_ShouldRemoveTheDecision_WhenTurnedOff()
+        {
+            var row = new LocationSpeciesFollowsRegion { Id = 3, LocationId = 5, SpeciesId = 100 };
+            GivenLocationAndSpeciesExist();
+            GivenExistingFollowRow(row);
+
+            await _service.SetFollowsRegion(5, 100, follows: false);
+
+            _followsRegionMock.Verify(f => f.Delete(row), Times.Once);
+        }
+
+        [Fact]
+        public async Task SetFollowsRegion_ShouldThrow_WhenTheLocationOrSpeciesIsMissing()
+        {
+            _locationsRepoMock.Setup(l => l.Any(It.IsAny<Expression<Func<Location, bool>>>())).ReturnsAsync(false);
+
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _service.SetFollowsRegion(99, 100, true));
+        }
+
+        [Fact]
+        public async Task AddRegulation_ShouldStopTheWaterFollowingTheRegionForThatSpecies()
+        {
+            // Writing a custom rule is the decision to stop inheriting there. Leaving the
+            // row would make the species both follow and override at once.
+            _speciesRepoMock.Setup(s => s.Any(It.IsAny<Expression<Func<Species, bool>>>())).ReturnsAsync(true);
+            _locationsRepoMock.Setup(l => l.GetAll(
+                It.IsAny<Expression<Func<Location, bool>>>(), null, null, false))
+                .ReturnsAsync(new List<Location> { new() { Id = 5 } });
+            _regulationsRepoMock.Setup(r => r.Find(
+                It.IsAny<Expression<Func<SpeciesRegulation, bool>>>(),
+                It.IsAny<Expression<Func<SpeciesRegulation, object>>[]?>(),
+                It.IsAny<bool>()))
+                .ReturnsAsync((SpeciesRegulation?)null);
+            _regulationsRepoMock.Setup(r => r.Add(It.IsAny<SpeciesRegulation>()))
+                .Returns<SpeciesRegulation>(r => { r.Id = 9; return r; });
+
+            var followRow = new LocationSpeciesFollowsRegion { Id = 3, LocationId = 5, SpeciesId = 100 };
+            _followsRegionMock.Setup(f => f.GetAll(
+                It.IsAny<Expression<Func<LocationSpeciesFollowsRegion, bool>>>(),
+                It.IsAny<Expression<Func<LocationSpeciesFollowsRegion, object>>[]?>(),
+                It.IsAny<Func<IQueryable<LocationSpeciesFollowsRegion>, IOrderedQueryable<LocationSpeciesFollowsRegion>>?>(),
+                It.IsAny<bool>()))
+                .ReturnsAsync(new List<LocationSpeciesFollowsRegion> { followRow });
+
+            await _service.AddRegulation(new SpeciesRegulationAdd
+            {
+                SpeciesId = 100,
+                LocationIds = new[] { 5 }
+            });
+
+            _followsRegionMock.Verify(f => f.Delete(followRow), Times.Once);
         }
     }
 }

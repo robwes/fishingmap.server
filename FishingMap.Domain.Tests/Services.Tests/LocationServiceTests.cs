@@ -24,6 +24,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
         private readonly Mock<IFileService> _fileServiceMock;
         private readonly Mock<IFishingMapConfiguration> _configMock;
         private readonly Mock<IRegulationsService> _regulationsServiceMock;
+        private readonly Mock<ILocationSpeciesFollowsRegionRepository> _followsRegionMock;
         private readonly IMapper _mapper;
         private readonly GeometryFactory _geometryFactory;
         private readonly LocationsService _locationService;
@@ -49,6 +50,17 @@ namespace FishingMap.Domain.Tests.Services.Tests
 
             var permitsMock = new Mock<IPermitRepository>();
             _unitOfWorkMock.Setup(u => u.Permits).Returns(permitsMock.Object);
+
+            // Editing a location prunes the follow-region decisions of species it no longer
+            // lists. Nothing follows by default here; the pruning itself is tested below.
+            _followsRegionMock = new Mock<ILocationSpeciesFollowsRegionRepository>();
+            _followsRegionMock.Setup(f => f.GetAll(
+                It.IsAny<Expression<Func<LocationSpeciesFollowsRegion, bool>>>(),
+                It.IsAny<Expression<Func<LocationSpeciesFollowsRegion, object>>[]?>(),
+                It.IsAny<Func<IQueryable<LocationSpeciesFollowsRegion>, IOrderedQueryable<LocationSpeciesFollowsRegion>>?>(),
+                It.IsAny<bool>()))
+                .ReturnsAsync(new List<LocationSpeciesFollowsRegion>());
+            _unitOfWorkMock.Setup(u => u.LocationSpeciesFollowsRegions).Returns(_followsRegionMock.Object);
 
             _configMock.Setup(c => c.GetPathToSpeciesImageFolder(It.IsAny<int>()))
                 .Returns((int id) => $"path/to/locations/{id}");
@@ -501,6 +513,38 @@ namespace FishingMap.Domain.Tests.Services.Tests
             Assert.Single(result.Species);
             Assert.Contains(result.Species, s => s.Name == "New Species");
             Assert.Single(result.Permits);
+        }
+
+        [Fact]
+        public async Task UpdateLocationAssociations_DropsFollowRegionDecisions_ForSpeciesNoLongerListed()
+        {
+            // Otherwise removing a species and adding it back later silently restores an
+            // inheritance nobody re-chose. Decision 11 in robwes/fishingmap.web#13.
+            var locationId = 1;
+            var location = new Location { Id = locationId, Species = new List<Species>(), Permits = new List<Permit>() };
+            _unitOfWorkMock.Setup(u => u.Locations.GetLocationWithDetails(locationId, false)).ReturnsAsync(location);
+            _unitOfWorkMock.Setup(u => u.Species.GetAll(It.IsAny<Expression<Func<Species, bool>>>(), null, null, false))
+                .ReturnsAsync(new List<Species> { new Species { Id = 2, Name = "Kept" } });
+            _unitOfWorkMock.Setup(u => u.Permits.GetAll(It.IsAny<Expression<Func<Permit, bool>>>(), null, null, false))
+                .ReturnsAsync(new List<Permit>());
+
+            var kept = new LocationSpeciesFollowsRegion { Id = 10, LocationId = locationId, SpeciesId = 2 };
+            var dropped = new LocationSpeciesFollowsRegion { Id = 11, LocationId = locationId, SpeciesId = 1 };
+            _followsRegionMock.Setup(f => f.GetAll(
+                It.IsAny<Expression<Func<LocationSpeciesFollowsRegion, bool>>>(),
+                It.IsAny<Expression<Func<LocationSpeciesFollowsRegion, object>>[]?>(),
+                It.IsAny<Func<IQueryable<LocationSpeciesFollowsRegion>, IOrderedQueryable<LocationSpeciesFollowsRegion>>?>(),
+                It.IsAny<bool>()))
+                .ReturnsAsync(new List<LocationSpeciesFollowsRegion> { kept, dropped });
+
+            await _locationService.UpdateLocationAssociations(locationId, new LocationAssociationsPatch
+            {
+                Species = new List<SpeciesDTO> { new SpeciesDTO { Id = 2, Name = "Kept" } },
+                Permits = new List<PermitDTO>()
+            });
+
+            _followsRegionMock.Verify(f => f.Delete(dropped), Times.Once);
+            _followsRegionMock.Verify(f => f.Delete(kept), Times.Never);
         }
 
         [Fact]

@@ -9,6 +9,7 @@ namespace FishingMap.Data.Repositories
         public IImageRepository Images { get; private set; }
         public ILocationOwnerRepository LocationOwners { get; private set; }
         public ILocationRepository Locations { get; private set; }
+        public ILocationSpeciesFollowsRegionRepository LocationSpeciesFollowsRegions { get; private set; }
         public IPermitRepository Permits { get; private set; }
         public IRefreshTokenRepository RefreshTokens { get; private set; }
         public IRegionRepository Regions { get; private set; }
@@ -21,6 +22,7 @@ namespace FishingMap.Data.Repositories
                           IImageRepository imageRepository,
                           ILocationOwnerRepository locationOwnerRepository,
                           ILocationRepository locationRepository,
+                          ILocationSpeciesFollowsRegionRepository locationSpeciesFollowsRegionRepository,
                           IPermitRepository permitRepository,
                           IRefreshTokenRepository refreshTokenRepository,
                           IRegionRepository regionRepository,
@@ -33,6 +35,7 @@ namespace FishingMap.Data.Repositories
             Images = imageRepository;
             LocationOwners = locationOwnerRepository;
             Locations = locationRepository;
+            LocationSpeciesFollowsRegions = locationSpeciesFollowsRegionRepository;
             Permits = permitRepository;
             RefreshTokens = refreshTokenRepository;
             Regions = regionRepository;

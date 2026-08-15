@@ -20,6 +20,7 @@ namespace FishingMap.Data.Context
         public virtual DbSet<SpeciesRegulation> SpeciesRegulations { get; set; }
         public virtual DbSet<ProtectedPeriod> ProtectedPeriods { get; set; }
         public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
+        public virtual DbSet<LocationSpeciesFollowsRegion> LocationSpeciesFollowsRegions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -65,6 +66,26 @@ namespace FishingMap.Data.Context
             modelBuilder.Entity<SpeciesRegulation>()
                 .Property(r => r.MaximumSizeCm)
                 .HasPrecision(6, 2);
+
+            // The real key. Without it a repeated "follow" write stores the decision twice
+            // and the species inherits twice over.
+            modelBuilder.Entity<LocationSpeciesFollowsRegion>()
+                .HasIndex(f => new { f.LocationId, f.SpeciesId })
+                .IsUnique();
+
+            modelBuilder.Entity<LocationSpeciesFollowsRegion>()
+                .HasOne(f => f.Location)
+                .WithMany()
+                .HasForeignKey(f => f.LocationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Restrict rather than cascade: a species is referenced from many places, and
+            // deleting one out from under a water's rules should fail loudly.
+            modelBuilder.Entity<LocationSpeciesFollowsRegion>()
+                .HasOne(f => f.Species)
+                .WithMany()
+                .HasForeignKey(f => f.SpeciesId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<RefreshToken>()
                 .HasIndex(t => t.TokenHash)

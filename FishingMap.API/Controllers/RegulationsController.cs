@@ -56,6 +56,17 @@ namespace FishingMap.API.Controllers
             return Ok(regulations);
         }
 
+        // Whether a water inherits its region's rules for one species. A PUT rather than a
+        // POST/DELETE pair because the resource is the decision itself, which is set to one
+        // of two values; the body carries which. See decision 11 in robwes/fishingmap.web#13.
+        [HttpPut("location/{locationId}/species/{speciesId}/follows-region")]
+        [Authorize(Roles = "Administrator")]
+        public async Task<IActionResult> PutFollowsRegion(int locationId, int speciesId, [FromBody] FollowsRegionUpdate input)
+        {
+            await _regulationsService.SetFollowsRegion(locationId, speciesId, input.Follows);
+            return Ok();
+        }
+
         [HttpPost]
         [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<SpeciesRegulationDTO>> Post([FromBody] SpeciesRegulationAdd regulation)

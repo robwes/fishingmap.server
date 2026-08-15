@@ -73,6 +73,7 @@ namespace FishingMap.Domain.Services
             };
 
             await AttachLocations(entity, input.LocationIds);
+            await ClearFollowsRegion(input.SpeciesId, input.LocationIds);
 
             entity = _unitOfWork.SpeciesRegulations.Add(entity);
             await _unitOfWork.SaveChanges();
@@ -108,6 +109,7 @@ namespace FishingMap.Domain.Services
 
             entity.Locations.Clear();
             await AttachLocations(entity, input.LocationIds);
+            await ClearFollowsRegion(input.SpeciesId, input.LocationIds);
 
             entity.ProtectedPeriods.Clear();
             var now = DateTime.UtcNow;
@@ -149,18 +151,92 @@ namespace FishingMap.Domain.Services
 
             var candidates = await _unitOfWork.SpeciesRegulations.GetCandidatesForLocation(locationId, ancestorIds);
 
+            // Inheritance is opt-in. A region rule reaches this water only for species an
+            // administrator chose to follow; for the rest it is discarded here, and the
+            // species comes back with no rule at all rather than one nobody verified fits.
+            // A location-scoped rule is not filtered — writing one IS the decision.
+            // See decision 11 in robwes/fishingmap.web#13.
+            var followed = await _unitOfWork.LocationSpeciesFollowsRegions.GetFollowedSpeciesIds(locationId);
+            var applicable = candidates
+                .Where(r => r.Locations.Any(l => l.Id == locationId) || followed.Contains(r.SpeciesId))
+                .ToList();
+
             int Rank(SpeciesRegulation r) =>
                 r.Locations.Any(l => l.Id == locationId) ? 0
                 : 1 + ancestorIds.IndexOf(r.RegionId!.Value);
 
             var rules = new List<LocationSpeciesRuleDTO>();
 
-            foreach (var speciesGroup in candidates.GroupBy(r => r.SpeciesId))
+            foreach (var speciesGroup in applicable.GroupBy(r => r.SpeciesId))
             {
                 rules.AddRange(ResolveSpecies(speciesGroup, locationId, Rank));
             }
 
             return rules;
+        }
+
+        public async Task<IEnumerable<int>> GetFollowedSpeciesIds(int locationId)
+        {
+            return await _unitOfWork.LocationSpeciesFollowsRegions.GetFollowedSpeciesIds(locationId);
+        }
+
+        /// <summary>
+        /// Makes a water inherit its region's rules for one species, or stops it.
+        ///
+        /// Following and having a custom rule are mutually exclusive, so this refuses to
+        /// switch a species to following while a location-scoped rule for it still exists —
+        /// the caller removes that first, which is the revert the editor already asks about.
+        /// Silently deleting it here would throw away an authored rule on a toggle.
+        /// </summary>
+        /// <param name="locationId">The water.</param>
+        /// <param name="speciesId">The species being decided.</param>
+        /// <param name="follows">True to inherit, false to go back to undecided.</param>
+        public async Task SetFollowsRegion(int locationId, int speciesId, bool follows)
+        {
+            if (!await _unitOfWork.Locations.Any(l => l.Id == locationId))
+            {
+                throw new KeyNotFoundException($"Location with id {locationId} not found.");
+            }
+            if (!await _unitOfWork.Species.Any(s => s.Id == speciesId))
+            {
+                throw new KeyNotFoundException($"Species with id {speciesId} not found.");
+            }
+
+            var existing = await _unitOfWork.LocationSpeciesFollowsRegions.Find(
+                f => f.LocationId == locationId && f.SpeciesId == speciesId);
+
+            if (!follows)
+            {
+                if (existing != null)
+                {
+                    _unitOfWork.LocationSpeciesFollowsRegions.Delete(existing);
+                    await _unitOfWork.SaveChanges();
+                }
+                return;
+            }
+
+            // Already following. Not an error — the unique index makes a second row
+            // impossible anyway, and a repeated click should be a no-op, not a 500.
+            if (existing != null)
+            {
+                return;
+            }
+
+            var ownRule = await _unitOfWork.SpeciesRegulations.Find(
+                r => r.SpeciesId == speciesId && r.Locations.Any(l => l.Id == locationId));
+            if (ownRule != null)
+            {
+                throw new ArgumentException(
+                    "This water has its own rule for that species. Remove it before following the region.");
+            }
+
+            _unitOfWork.LocationSpeciesFollowsRegions.Add(new LocationSpeciesFollowsRegion
+            {
+                LocationId = locationId,
+                SpeciesId = speciesId,
+                Created = DateTime.UtcNow
+            });
+            await _unitOfWork.SaveChanges();
         }
 
         /// <summary>
@@ -364,6 +440,33 @@ namespace FishingMap.Domain.Services
                 {
                     throw new ArgumentException("One or more locations already have a location-scoped rule for this species and adipose fin state.");
                 }
+            }
+        }
+
+        /// <summary>
+        /// Drops the "follows the region" decision at every water a custom rule now covers.
+        ///
+        /// The two states are exclusive, and writing a rule for a water is itself the
+        /// decision to stop inheriting there. Leaving the row behind would make a species
+        /// both follow and override, and switching back later would silently resurrect an
+        /// inheritance nobody re-chose.
+        /// </summary>
+        /// <param name="speciesId">The species the rule covers.</param>
+        /// <param name="locationIds">The waters it is scoped to.</param>
+        private async Task ClearFollowsRegion(int speciesId, IEnumerable<int> locationIds)
+        {
+            var ids = locationIds?.Distinct().ToList() ?? new List<int>();
+            if (ids.Count == 0)
+            {
+                return;
+            }
+
+            var rows = await _unitOfWork.LocationSpeciesFollowsRegions.GetAll(
+                f => f.SpeciesId == speciesId && ids.Contains(f.LocationId));
+
+            foreach (var row in rows)
+            {
+                _unitOfWork.LocationSpeciesFollowsRegions.Delete(row);
             }
         }
 

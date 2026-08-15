@@ -26,5 +26,11 @@ namespace FishingMap.Domain.DTO.Locations
         public IEnumerable<ImageDTO> Images { get; set; } = new List<ImageDTO>();
         public IEnumerable<PermitDTO> Permits { get; set; } = new List<PermitDTO>();
         public IEnumerable<LocationSpeciesRuleDTO> SpeciesRules { get; set; } = new List<LocationSpeciesRuleDTO>();
+
+        // Species this water inherits its region's rules for. Read it together with
+        // SpeciesRules: a Location-sourced rule means a custom rule, an id here means
+        // inherited, and neither means no administrator has decided yet — which is not the
+        // same as "unrestricted" and must not be shown as such.
+        public IEnumerable<int> FollowsRegionSpeciesIds { get; set; } = new List<int>();
     }
 }

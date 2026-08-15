@@ -107,6 +107,7 @@ builder.Services.AddSingleton<IFishingMapConfiguration, FishingMapConfiguration>
 builder.Services.AddScoped<IImageRepository, ImageRepository>();
 builder.Services.AddScoped<ILocationOwnerRepository, LocationOwnerRepository>();
 builder.Services.AddScoped<ILocationRepository, LocationRepository>();
+builder.Services.AddScoped<ILocationSpeciesFollowsRegionRepository, LocationSpeciesFollowsRegionRepository>();
 builder.Services.AddScoped<IPermitRepository, PermitRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<IRegionRepository, RegionRepository>();
