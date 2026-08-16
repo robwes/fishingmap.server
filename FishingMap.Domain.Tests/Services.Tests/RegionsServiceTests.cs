@@ -55,7 +55,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
         [Fact]
         public async Task AddRegion_ShouldThrow_WhenNonNationalMissingParent()
         {
-            var add = new RegionAdd { Name = "Uusimaa", Type = RegionType.Ely };
+            var add = new RegionAdd { Name = "Uusimaa", Type = RegionType.StateRegion };
 
             var ex = await Assert.ThrowsAsync<ArgumentException>(() => _service.AddRegion(add));
             Assert.Contains("Non-national regions must have a parent", ex.Message);
@@ -66,7 +66,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
         {
             _regionsRepoMock.Setup(r => r.Any(It.IsAny<Expression<Func<Region, bool>>>())).ReturnsAsync(false);
 
-            var add = new RegionAdd { Name = "Uusimaa", Type = RegionType.Ely, ParentRegionId = 99 };
+            var add = new RegionAdd { Name = "Uusimaa", Type = RegionType.StateRegion, ParentRegionId = 99 };
 
             var ex = await Assert.ThrowsAsync<ArgumentException>(() => _service.AddRegion(add));
             Assert.Contains("Parent region with id 99 not found", ex.Message);
@@ -78,13 +78,13 @@ namespace FishingMap.Domain.Tests.Services.Tests
             _regionsRepoMock.Setup(r => r.Any(It.IsAny<Expression<Func<Region, bool>>>())).ReturnsAsync(true);
             _regionsRepoMock.Setup(r => r.Add(It.IsAny<Region>())).Returns<Region>(r => { r.Id = 42; return r; });
 
-            var add = new RegionAdd { Name = "Uusimaa", Type = RegionType.Ely, ParentRegionId = 1 };
+            var add = new RegionAdd { Name = "Uusimaa", Type = RegionType.StateRegion, ParentRegionId = 1 };
 
             var dto = await _service.AddRegion(add);
 
             Assert.Equal(42, dto.Id);
             Assert.Equal("Uusimaa", dto.Name);
-            Assert.Equal(RegionType.Ely, dto.Type);
+            Assert.Equal(RegionType.StateRegion, dto.Type);
             Assert.Equal(1, dto.ParentRegionId);
             _unitOfWorkMock.Verify(u => u.SaveChanges(), Times.Once);
         }
@@ -94,7 +94,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
         {
             _regionsRepoMock.Setup(r => r.GetById(7, null, false)).ReturnsAsync((Region?)null);
 
-            var upd = new RegionUpdate { Id = 7, Name = "x", Type = RegionType.Ely, ParentRegionId = 1 };
+            var upd = new RegionUpdate { Id = 7, Name = "x", Type = RegionType.StateRegion, ParentRegionId = 1 };
 
             await Assert.ThrowsAsync<KeyNotFoundException>(() => _service.UpdateRegion(7, upd));
         }
@@ -105,7 +105,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
             _regionsRepoMock.Setup(r => r.GetById(1, null, false))
                 .ReturnsAsync(new Region { Id = 1, Name = "Finland", Type = RegionType.Root });
 
-            var upd = new RegionUpdate { Id = 1, Name = "Finland", Type = RegionType.Ely };
+            var upd = new RegionUpdate { Id = 1, Name = "Finland", Type = RegionType.StateRegion };
 
             var ex = await Assert.ThrowsAsync<ArgumentException>(() => _service.UpdateRegion(1, upd));
             Assert.Contains("root region's type cannot be changed", ex.Message);
@@ -115,7 +115,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
         public async Task UpdateRegion_ShouldThrow_WhenPromotingToNational()
         {
             _regionsRepoMock.Setup(r => r.GetById(2, null, false))
-                .ReturnsAsync(new Region { Id = 2, Name = "Uusimaa", Type = RegionType.Ely, ParentRegionId = 1 });
+                .ReturnsAsync(new Region { Id = 2, Name = "Uusimaa", Type = RegionType.StateRegion, ParentRegionId = 1 });
 
             var upd = new RegionUpdate { Id = 2, Name = "Uusimaa", Type = RegionType.Root };
 
@@ -127,9 +127,9 @@ namespace FishingMap.Domain.Tests.Services.Tests
         public async Task UpdateRegion_ShouldThrow_WhenSelfParent()
         {
             _regionsRepoMock.Setup(r => r.GetById(2, null, false))
-                .ReturnsAsync(new Region { Id = 2, Name = "Uusimaa", Type = RegionType.Ely, ParentRegionId = 1 });
+                .ReturnsAsync(new Region { Id = 2, Name = "Uusimaa", Type = RegionType.StateRegion, ParentRegionId = 1 });
 
-            var upd = new RegionUpdate { Id = 2, Name = "Uusimaa", Type = RegionType.Ely, ParentRegionId = 2 };
+            var upd = new RegionUpdate { Id = 2, Name = "Uusimaa", Type = RegionType.StateRegion, ParentRegionId = 2 };
 
             var ex = await Assert.ThrowsAsync<ArgumentException>(() => _service.UpdateRegion(2, upd));
             Assert.Contains("cannot be its own parent", ex.Message);
@@ -140,16 +140,16 @@ namespace FishingMap.Domain.Tests.Services.Tests
         {
             // Region 2 is the parent of region 3; moving 2 under 3 would create a cycle.
             _regionsRepoMock.Setup(r => r.GetById(2, null, false))
-                .ReturnsAsync(new Region { Id = 2, Name = "Uusimaa", Type = RegionType.Ely, ParentRegionId = 1 });
+                .ReturnsAsync(new Region { Id = 2, Name = "Uusimaa", Type = RegionType.StateRegion, ParentRegionId = 1 });
             _regionsRepoMock.Setup(r => r.Any(It.IsAny<Expression<Func<Region, bool>>>())).ReturnsAsync(true);
             _regionsRepoMock.Setup(r => r.GetAncestry(3)).ReturnsAsync(new List<Region>
             {
                 new Region { Id = 3, Type = RegionType.ManagementArea, ParentRegionId = 2 },
-                new Region { Id = 2, Type = RegionType.Ely, ParentRegionId = 1 },
+                new Region { Id = 2, Type = RegionType.StateRegion, ParentRegionId = 1 },
                 new Region { Id = 1, Type = RegionType.Root }
             });
 
-            var upd = new RegionUpdate { Id = 2, Name = "Uusimaa", Type = RegionType.Ely, ParentRegionId = 3 };
+            var upd = new RegionUpdate { Id = 2, Name = "Uusimaa", Type = RegionType.StateRegion, ParentRegionId = 3 };
 
             var ex = await Assert.ThrowsAsync<ArgumentException>(() => _service.UpdateRegion(2, upd));
             Assert.Contains("descendants", ex.Message);
@@ -158,12 +158,12 @@ namespace FishingMap.Domain.Tests.Services.Tests
         [Fact]
         public async Task UpdateRegion_ShouldPersist_WhenValid()
         {
-            var entity = new Region { Id = 2, Name = "Old", Type = RegionType.Ely, ParentRegionId = 1 };
+            var entity = new Region { Id = 2, Name = "Old", Type = RegionType.StateRegion, ParentRegionId = 1 };
             _regionsRepoMock.Setup(r => r.GetById(2, null, false)).ReturnsAsync(entity);
             _regionsRepoMock.Setup(r => r.Any(It.IsAny<Expression<Func<Region, bool>>>())).ReturnsAsync(true);
             _regionsRepoMock.Setup(r => r.GetAncestry(3)).ReturnsAsync(new List<Region>
             {
-                new Region { Id = 3, Type = RegionType.Ely, ParentRegionId = 1 },
+                new Region { Id = 3, Type = RegionType.StateRegion, ParentRegionId = 1 },
                 new Region { Id = 1, Type = RegionType.Root }
             });
 
@@ -191,7 +191,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
         public async Task DeleteRegion_ShouldThrow_WhenHasChildren()
         {
             _regionsRepoMock.Setup(r => r.GetById(2, null, false))
-                .ReturnsAsync(new Region { Id = 2, Type = RegionType.Ely, ParentRegionId = 1 });
+                .ReturnsAsync(new Region { Id = 2, Type = RegionType.StateRegion, ParentRegionId = 1 });
             _regionsRepoMock.Setup(r => r.Any(It.IsAny<Expression<Func<Region, bool>>>())).ReturnsAsync(true);
 
             var ex = await Assert.ThrowsAsync<ArgumentException>(() => _service.DeleteRegion(2));
@@ -212,7 +212,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
         [Fact]
         public async Task DeleteRegion_ShouldPersist_WhenValid()
         {
-            var entity = new Region { Id = 2, Type = RegionType.Ely, ParentRegionId = 1 };
+            var entity = new Region { Id = 2, Type = RegionType.StateRegion, ParentRegionId = 1 };
             _regionsRepoMock.Setup(r => r.GetById(2, null, false)).ReturnsAsync(entity);
             _regionsRepoMock.Setup(r => r.Any(It.IsAny<Expression<Func<Region, bool>>>())).ReturnsAsync(false);
 

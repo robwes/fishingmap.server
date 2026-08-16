@@ -24,7 +24,7 @@ namespace FishingMap.Data.Repositories
         public async Task<IReadOnlyList<Region>> GetAncestry(int regionId)
         {
             // Loop loads each ancestor with one query each. Acceptable: the chain is at most a few rows
-            // (Location → kalatalousalue → ELY → National) and ancestry is read-only and cacheable.
+            // (Location → kalatalousalue → state regional authority → root) and ancestry is read-only and cacheable.
             var chain = new List<Region>();
             var visited = new HashSet<int>();
             var current = await _context.Regions

@@ -248,7 +248,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
             _regionsRepoMock.Setup(r => r.GetAncestry(10)).ReturnsAsync(new List<Region>
             {
                 new() { Id = 10, Name = "Sub", Type = RegionType.ManagementArea, ParentRegionId = 20 },
-                new() { Id = 20, Name = "Ely", Type = RegionType.Ely, ParentRegionId = 1 },
+                new() { Id = 20, Name = "Uusimaa", Type = RegionType.StateRegion, ParentRegionId = 1 },
                 new() { Id = 1, Name = "Finland", Type = RegionType.Root }
             });
 
@@ -286,7 +286,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
             _regionsRepoMock.Setup(r => r.GetAncestry(10)).ReturnsAsync(new List<Region>
             {
                 new() { Id = 10, Name = "Sub", Type = RegionType.ManagementArea, ParentRegionId = 20 },
-                new() { Id = 20, Name = "Ely", Type = RegionType.Ely, ParentRegionId = 1 },
+                new() { Id = 20, Name = "Uusimaa", Type = RegionType.StateRegion, ParentRegionId = 1 },
                 new() { Id = 1, Name = "Finland", Type = RegionType.Root }
             });
 
@@ -303,7 +303,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
                 Id = 2,
                 SpeciesId = 100,
                 RegionId = 20,
-                Region = new Region { Id = 20, Type = RegionType.Ely, Name = "Ely" },
+                Region = new Region { Id = 20, Type = RegionType.StateRegion, Name = "Uusimaa" },
                 MinimumSizeCm = 35
             };
 
@@ -314,7 +314,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
 
             Assert.Single(rules);
             Assert.Equal(35, rules[0].MinimumSizeCm);
-            Assert.Equal("Region: Ely", rules[0].Source);
+            Assert.Equal("Region: Uusimaa", rules[0].Source);
         }
 
         [Fact]
@@ -379,7 +379,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
             _locationsRepoMock.Setup(l => l.GetById(5, null, true)).ReturnsAsync(location);
             _regionsRepoMock.Setup(r => r.GetAncestry(20)).ReturnsAsync(new List<Region>
             {
-                new() { Id = 20, Name = "Ely", Type = RegionType.Ely, ParentRegionId = 1 },
+                new() { Id = 20, Name = "Uusimaa", Type = RegionType.StateRegion, ParentRegionId = 1 },
                 new() { Id = 1, Name = "Finland", Type = RegionType.Root }
             });
 
@@ -556,7 +556,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
                 Id = 2,
                 SpeciesId = 100,
                 RegionId = 20,
-                Region = new Region { Id = 20, Name = "Uusimaa ELY", Type = RegionType.Ely },
+                Region = new Region { Id = 20, Name = "Uusimaa Economic Development Centre", Type = RegionType.StateRegion },
                 BagLimit = 4,
                 BagLimitBasis = BagLimitBasis.Permit
             };
@@ -579,7 +579,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
             Assert.Equal("Finland", result[0].Region!.Name);
             Assert.Equal(RegionType.Root, result[0].Region!.Type);
             // The whole point of this endpoint: names, not just ids.
-            Assert.Equal("Uusimaa ELY", result[1].Region!.Name);
+            Assert.Equal("Uusimaa Economic Development Centre", result[1].Region!.Name);
             Assert.Equal(BagLimitBasis.Permit, result[1].BagLimitBasis);
         }
 
@@ -599,7 +599,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
         }
 
         /// <summary>
-        /// Puts a water under Sub -> Ely -> Finland, the shape the variant tests below share.
+        /// Puts a water under Sub -> State region -> Finland, the shape the variant tests below share.
         /// </summary>
         private Location GivenLocationInFullChain()
         {
@@ -608,7 +608,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
             _regionsRepoMock.Setup(r => r.GetAncestry(10)).ReturnsAsync(new List<Region>
             {
                 new() { Id = 10, Name = "Sub", Type = RegionType.ManagementArea, ParentRegionId = 20 },
-                new() { Id = 20, Name = "Ely", Type = RegionType.Ely, ParentRegionId = 1 },
+                new() { Id = 20, Name = "Uusimaa", Type = RegionType.StateRegion, ParentRegionId = 1 },
                 new() { Id = 1, Name = "Finland", Type = RegionType.Root }
             });
             return location;
@@ -618,18 +618,18 @@ namespace FishingMap.Domain.Tests.Services.Tests
         /// A region-scoped trout rule.
         /// </summary>
         /// <param name="id">Regulation id.</param>
-        /// <param name="regionId">Region it is scoped to; 1 = Finland, 20 = Ely.</param>
+        /// <param name="regionId">Region it is scoped to; 1 = Finland, 20 = the state regional authority.</param>
         /// <param name="fin">Fin state it is narrowed to, or null for all trout.</param>
         /// <param name="minimumSizeCm">Minimum size, used to tell the rules apart.</param>
         private static SpeciesRegulation TroutRule(int id, int regionId, AdiposeFin? fin, decimal? minimumSizeCm)
         {
-            var type = regionId == 1 ? RegionType.Root : RegionType.Ely;
+            var type = regionId == 1 ? RegionType.Root : RegionType.StateRegion;
             return new SpeciesRegulation
             {
                 Id = id,
                 SpeciesId = 100,
                 RegionId = regionId,
-                Region = new Region { Id = regionId, Type = type, Name = regionId == 1 ? "Finland" : "Ely" },
+                Region = new Region { Id = regionId, Type = type, Name = regionId == 1 ? "Finland" : "Uusimaa" },
                 AdiposeFin = fin,
                 MinimumSizeCm = minimumSizeCm
             };
@@ -692,7 +692,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
         [Fact]
         public async Task GetEffectiveRulesForLocation_ShouldLetANearerRegionBeatAnExactFinMatch()
         {
-            // Region specificity is the primary axis. An ELY rule for all trout overrides a
+            // Region specificity is the primary axis. A state-region rule for all trout overrides a
             // national intact-only rule, because the nearer authority spoke about this water.
             GivenLocationInFullChain();
 
