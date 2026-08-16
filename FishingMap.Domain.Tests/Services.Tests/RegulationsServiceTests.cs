@@ -247,7 +247,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
             _locationsRepoMock.Setup(l => l.GetById(5, null, true)).ReturnsAsync(location);
             _regionsRepoMock.Setup(r => r.GetAncestry(10)).ReturnsAsync(new List<Region>
             {
-                new() { Id = 10, Name = "Sub", Type = RegionType.ManagementArea, ParentRegionId = 20 },
+                new() { Id = 10, Name = "Sub", Type = RegionType.FisheriesRegion, ParentRegionId = 20 },
                 new() { Id = 20, Name = "Uusimaa", Type = RegionType.StateRegion, ParentRegionId = 1 },
                 new() { Id = 1, Name = "Finland", Type = RegionType.Root }
             });
@@ -264,7 +264,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
                 Id = 2,
                 SpeciesId = 100,
                 RegionId = 10,
-                Region = new Region { Id = 10, Type = RegionType.ManagementArea, Name = "Sub" },
+                Region = new Region { Id = 10, Type = RegionType.FisheriesRegion, Name = "Sub" },
                 MinimumSizeCm = 30
             };
 
@@ -285,7 +285,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
             _locationsRepoMock.Setup(l => l.GetById(5, null, true)).ReturnsAsync(location);
             _regionsRepoMock.Setup(r => r.GetAncestry(10)).ReturnsAsync(new List<Region>
             {
-                new() { Id = 10, Name = "Sub", Type = RegionType.ManagementArea, ParentRegionId = 20 },
+                new() { Id = 10, Name = "Sub", Type = RegionType.FisheriesRegion, ParentRegionId = 20 },
                 new() { Id = 20, Name = "Uusimaa", Type = RegionType.StateRegion, ParentRegionId = 1 },
                 new() { Id = 1, Name = "Finland", Type = RegionType.Root }
             });
@@ -607,7 +607,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
             _locationsRepoMock.Setup(l => l.GetById(5, null, true)).ReturnsAsync(location);
             _regionsRepoMock.Setup(r => r.GetAncestry(10)).ReturnsAsync(new List<Region>
             {
-                new() { Id = 10, Name = "Sub", Type = RegionType.ManagementArea, ParentRegionId = 20 },
+                new() { Id = 10, Name = "Sub", Type = RegionType.FisheriesRegion, ParentRegionId = 20 },
                 new() { Id = 20, Name = "Uusimaa", Type = RegionType.StateRegion, ParentRegionId = 1 },
                 new() { Id = 1, Name = "Finland", Type = RegionType.Root }
             });
@@ -840,7 +840,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
             _locationsRepoMock.Setup(l => l.GetById(5, null, true)).ReturnsAsync(location);
             _regionsRepoMock.Setup(r => r.GetAncestry(10)).ReturnsAsync(new List<Region>
             {
-                new() { Id = 10, Name = "Sub", Type = RegionType.ManagementArea, ParentRegionId = 1 },
+                new() { Id = 10, Name = "Sub", Type = RegionType.FisheriesRegion, ParentRegionId = 1 },
                 new() { Id = 1, Name = "Finland", Type = RegionType.Root }
             });
             _followsRegionMock.Setup(f => f.GetFollowedSpeciesIds(5)).ReturnsAsync(new List<int>());
@@ -872,7 +872,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
             _locationsRepoMock.Setup(l => l.GetById(5, null, true)).ReturnsAsync(location);
             _regionsRepoMock.Setup(r => r.GetAncestry(10)).ReturnsAsync(new List<Region>
             {
-                new() { Id = 10, Name = "Sub", Type = RegionType.ManagementArea, ParentRegionId = 1 },
+                new() { Id = 10, Name = "Sub", Type = RegionType.FisheriesRegion, ParentRegionId = 1 },
                 new() { Id = 1, Name = "Finland", Type = RegionType.Root }
             });
             _followsRegionMock.Setup(f => f.GetFollowedSpeciesIds(5)).ReturnsAsync(new List<int>());

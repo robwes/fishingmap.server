@@ -28,8 +28,12 @@ namespace FishingMap.Data.Entities
         // since 2026, the ELY centres before them.
         StateRegion = 1,
 
-        // The kalatalousalue. Describes a function rather than an organisation's brand,
-        // which is why it hasn't gone stale.
-        ManagementArea = 2
+        // The kalatalousalue, whose own English name is "fisheries region". Named for the
+        // thing itself rather than positionally, unlike the two above, because this is not a
+        // position an organisation occupies — it IS the statutory category, so there is
+        // nothing to be reorganised out from under the name. It was called ManagementArea
+        // until 2026-08-16; that appears to have come from the käyttö- ja hoitosuunnitelma,
+        // the "use and management plan", where the word "management" actually belongs.
+        FisheriesRegion = 2
     }
 }

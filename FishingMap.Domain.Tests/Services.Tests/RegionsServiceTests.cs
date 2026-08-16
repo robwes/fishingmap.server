@@ -144,7 +144,7 @@ namespace FishingMap.Domain.Tests.Services.Tests
             _regionsRepoMock.Setup(r => r.Any(It.IsAny<Expression<Func<Region, bool>>>())).ReturnsAsync(true);
             _regionsRepoMock.Setup(r => r.GetAncestry(3)).ReturnsAsync(new List<Region>
             {
-                new Region { Id = 3, Type = RegionType.ManagementArea, ParentRegionId = 2 },
+                new Region { Id = 3, Type = RegionType.FisheriesRegion, ParentRegionId = 2 },
                 new Region { Id = 2, Type = RegionType.StateRegion, ParentRegionId = 1 },
                 new Region { Id = 1, Type = RegionType.Root }
             });
@@ -167,11 +167,11 @@ namespace FishingMap.Domain.Tests.Services.Tests
                 new Region { Id = 1, Type = RegionType.Root }
             });
 
-            var upd = new RegionUpdate { Id = 2, Name = "New", Type = RegionType.ManagementArea, ParentRegionId = 3 };
+            var upd = new RegionUpdate { Id = 2, Name = "New", Type = RegionType.FisheriesRegion, ParentRegionId = 3 };
             var dto = await _service.UpdateRegion(2, upd);
 
             Assert.Equal("New", entity.Name);
-            Assert.Equal(RegionType.ManagementArea, entity.Type);
+            Assert.Equal(RegionType.FisheriesRegion, entity.Type);
             Assert.Equal(3, entity.ParentRegionId);
             Assert.Equal("New", dto.Name);
             _unitOfWorkMock.Verify(u => u.SaveChanges(), Times.Once);

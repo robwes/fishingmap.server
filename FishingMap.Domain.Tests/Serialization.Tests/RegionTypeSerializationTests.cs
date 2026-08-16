@@ -18,7 +18,7 @@ namespace FishingMap.Domain.Tests.Serialization.Tests
         [Theory]
         [InlineData(RegionType.Root, "Root")]
         [InlineData(RegionType.StateRegion, "StateRegion")]
-        [InlineData(RegionType.ManagementArea, "ManagementArea")]
+        [InlineData(RegionType.FisheriesRegion, "FisheriesRegion")]
         public void RegionDTO_SerializesTypeAsItsName(RegionType type, string expected)
         {
             var json = JsonSerializer.Serialize(new RegionDTO { Id = 1, Name = "x", Type = type }, WebOptions);
@@ -56,10 +56,10 @@ namespace FishingMap.Domain.Tests.Serialization.Tests
         public void RegionUpdate_DeserializesTypeFromName()
         {
             var update = JsonSerializer.Deserialize<RegionUpdate>(
-                """{"id":2,"name":"Uusimaa","type":"ManagementArea"}""", WebOptions);
+                """{"id":2,"name":"Uusimaa","type":"FisheriesRegion"}""", WebOptions);
 
             Assert.NotNull(update);
-            Assert.Equal(RegionType.ManagementArea, update!.Type);
+            Assert.Equal(RegionType.FisheriesRegion, update!.Type);
         }
     }
 }
